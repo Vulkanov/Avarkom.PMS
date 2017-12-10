@@ -82,7 +82,7 @@ byte quiet_treshold = EEPROM.read(EPR_quiet_treshold);
 int QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);    //0;   //порог перехода на резерв
 byte loud_treshold = EEPROM.read(EPR_loud_treshold);
 int LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023); //60;   //порог восстановления на основной
-const byte NUM_OF_SAMPLES = 80;
+const byte NUM_OF_SAMPLES = 128;
 
 byte SOURCE_STATE;
 const byte SOUND = 0;
@@ -97,6 +97,7 @@ const byte SECONDARY_SOURCE_RIGHT_INPUT = 3;
 
 const byte SOURCE_OUTPUT_1 = 2;
 const byte SOURCE_OUTPUT_2 = 3;
+const byte LedPin = 8;
 byte CURRENT_SOURCE;
 
 
@@ -145,18 +146,19 @@ if (digitalRead(D4) == LOW || digitalRead(D5) == LOW || digitalRead(D6) == LOW |
 }
 };
 
+
 //индикатор уровня
-uint8_t symbol[8] = {B10101,B10101,B10101,B10101,B10101,B10101,B10101,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
+uint8_t symbol[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
 void levelmetr(int valSensor){
-  if (valSensor <= 10)  {
+  if (valSensor <= 8)  {
      lcd.print("HET 3B\5KA!");
-     //delay(100);
+     
      }
-     else if (valSensor > 10) {
-        uint8_t j=map(valSensor,0,255,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
-        for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
-        lcd.write(j>i? 1:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
-        }
+     else if (valSensor > 8) {
+      uint8_t j=map(valSensor,0,255,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
+      for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
+      lcd.write(j>i? 1:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
+      }
    }                       
 }
 
@@ -164,6 +166,8 @@ void changeSourceTo(int source){
   digitalWrite(SOURCE_OUTPUT_1, source);
   digitalWrite(SOURCE_OUTPUT_2, source);
   CURRENT_SOURCE = source;
+  if (CONTROL_TYPE == AUTO) digitalWrite(LedPin, source);
+  
 }
 
 
@@ -174,7 +178,6 @@ int processAnalogValue(int channel){
     sygnal += analogRead(channel);
     delayMicroseconds(SAMPLING_DELAY);
   }
-
   return sygnal / NUM_OF_SAMPLES; 
 }
 
@@ -304,6 +307,7 @@ void setup() {
   pinMode(D5, INPUT);
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
+  pinMode(LedPin, OUTPUT);
 
 
   lcd.createChar(2, bukva_I);      // Создаем символ под номером 2
@@ -457,6 +461,7 @@ void frame_0(){
  lcd.print("1");
  lcd.setCursor(1,0);
  levelmetr(ch1);
+ Serial.println(ch1);
  lcd.setCursor(0,1);
  lcd.print("2");
  levelmetr(ch2);
@@ -478,7 +483,7 @@ void frame_0(){
 switch (key_N) {
     case 0:
       lcd.clear();// right
-        if (CONTROL_TYPE <= 1) CONTROL_TYPE++;
+        if (CONTROL_TYPE < 2) CONTROL_TYPE++;
         else (CONTROL_TYPE=0);
         changeStateTo(CONTROL_TYPE);
       break;   
