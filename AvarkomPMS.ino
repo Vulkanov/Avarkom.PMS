@@ -146,12 +146,18 @@ if (digitalRead(D4) == LOW || digitalRead(D5) == LOW || digitalRead(D6) == LOW |
 };
 
 //индикатор уровня
-uint8_t           symbol[8] = {B10101,B10101,B10101,B10101,B10101,B10101,B10101,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
+uint8_t symbol[8] = {B10101,B10101,B10101,B10101,B10101,B10101,B10101,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
 void levelmetr(int valSensor){
-  uint8_t j=map(valSensor,0,255,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
-  for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
+  if (valSensor <= 10)  {
+     lcd.print("HET 3B\5KA!");
+     //delay(100);
+     }
+     else if (valSensor > 10) {
+        uint8_t j=map(valSensor,0,255,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
+        for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
         lcd.write(j>i? 1:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
-    }                           
+        }
+   }                       
 }
 
 void changeSourceTo(int source){
@@ -302,9 +308,10 @@ void setup() {
 
   lcd.createChar(2, bukva_I);      // Создаем символ под номером 2
   lcd.createChar(3, bukva_CH);
-  lcd.createChar(4, bukva_ZH);      // Создаем символ под номером 4
+  lcd.createChar(4, bukva_G);      // Создаем символ под номером 4
   lcd.createChar(5, bukva_Y);
-  lcd.createChar(6, bukva_D);  
+  lcd.createChar(6, bukva_D); 
+  lcd.createChar(7, bukva_L); 
 
   
   byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
@@ -342,12 +349,12 @@ void loop() {
     EEPROM.update(EPR_Ip1, Ip1);
     EEPROM.update(EPR_Ip2, Ip2);
     EEPROM.update(EPR_Ip3, Ip3);
+    EEPROM.update(EPR_Ip4, Ip4);
     EEPROM.update(EPR_Mask1, Mask1);
     EEPROM.update(EPR_Mask2, Mask2);
     EEPROM.update(EPR_Mask3, Mask3);
-    EEPROM.update(EPR_Mask4, Mask4); EEPROM.update(EPR_Ip4, Ip4);
+    EEPROM.update(EPR_Mask4, Mask4); 
     frame_N = 0;
-   
   }
 
   switch (frame_N) {
