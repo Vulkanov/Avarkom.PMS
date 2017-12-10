@@ -596,7 +596,7 @@ void frame_30(){
     case 0:// right
       lcd.clear();
       if (quiet_treshold < 100) quiet_treshold = quiet_treshold + 5; 
-      else quiet_treshold = 0;
+      else quiet_treshold = 5;
       QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);
       break;   
     case 1:// up
@@ -611,7 +611,7 @@ void frame_30(){
       break;
     case 3: // left
       lcd.clear();
-      if (quiet_treshold > 1) quiet_treshold = quiet_treshold - 5; 
+      if (quiet_treshold > 5) quiet_treshold = quiet_treshold - 5; 
       else quiet_treshold = 100;
       QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);
       break;   
@@ -634,7 +634,7 @@ void frame_40(){
    switch (key_N) {
     case 0:// right
       if (loud_treshold < 100) loud_treshold = loud_treshold + 5; 
-      else loud_treshold = 0;
+      else loud_treshold = 5;
       LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023);
       lcd.clear();
       break;   
@@ -649,7 +649,7 @@ void frame_40(){
       EEPROM.update(EPR_loud_treshold,loud_treshold);
       break;
     case 3: // left
-      if (loud_treshold > 1) loud_treshold = loud_treshold -5; 
+      if (loud_treshold > 5) loud_treshold = loud_treshold -5; 
       else loud_treshold = 100;
       LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023);
       lcd.clear();
