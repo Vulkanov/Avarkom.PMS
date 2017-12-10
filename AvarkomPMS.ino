@@ -334,6 +334,18 @@ void loop() {
   {
     previousMillis = currentMillis;
     lcd.clear();
+    EEPROM.update(EPR_silence_timeout,silence_timeout);
+    EEPROM.update(EPR_sound_timeout,sound_timeout);
+    EEPROM.update(EPR_quiet_treshold,quiet_treshold);
+    EEPROM.update(EPR_loud_treshold,loud_treshold);
+    EEPROM.update(EPR_PORT, PORT);
+    EEPROM.update(EPR_Ip1, Ip1);
+    EEPROM.update(EPR_Ip2, Ip2);
+    EEPROM.update(EPR_Ip3, Ip3);
+    EEPROM.update(EPR_Mask1, Mask1);
+    EEPROM.update(EPR_Mask2, Mask2);
+    EEPROM.update(EPR_Mask3, Mask3);
+    EEPROM.update(EPR_Mask4, Mask4); EEPROM.update(EPR_Ip4, Ip4);
     frame_N = 0;
    
   }
