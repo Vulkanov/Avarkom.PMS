@@ -15,6 +15,10 @@ LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 #define btnDOWN   2// кнопка  DOWN
 #define btnLEFT   3// кнопка  LEFT
 #define btnNONE   5// кнопки  не нажаты
+//#define PRIMARY_SOURCE_LEFT_INPUT A0
+//#define PRIMARY_SOURCE_RIGHT_INPUT A1
+//#define SECONDARY_SOURCE_LEFT_INPUT A2
+//#define SECONDARY_SOURCE_RIGHT_INPUT A3
 
 byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
 byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
@@ -90,10 +94,10 @@ const byte SILENCE = 1;
 const byte SOUND_DISAPPEARED = 2;
 const byte SOUND_APPEARED = 3;
 
-const byte PRIMARY_SOURCE_LEFT_INPUT = 0; 
-const byte PRIMARY_SOURCE_RIGHT_INPUT = 1; 
-const byte SECONDARY_SOURCE_LEFT_INPUT = 2; 
-const byte SECONDARY_SOURCE_RIGHT_INPUT = 3; 
+const byte PRIMARY_SOURCE_LEFT_INPUT = A0; 
+const byte PRIMARY_SOURCE_RIGHT_INPUT = A1; 
+const byte SECONDARY_SOURCE_LEFT_INPUT = A2; 
+const byte SECONDARY_SOURCE_RIGHT_INPUT = A3; 
 
 const byte SOURCE_OUTPUT_1 = 2;
 const byte SOURCE_OUTPUT_2 = 3;
@@ -148,16 +152,16 @@ if (digitalRead(D4) == LOW || digitalRead(D5) == LOW || digitalRead(D6) == LOW |
 
 
 //индикатор уровня
-uint8_t symbol[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
+uint8_t symbol0[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
 void levelmetr(int valSensor){
   if (valSensor <= 8)  {
      lcd.print("HET 3B\5KA!");
-     
      }
      else if (valSensor > 8) {
-      uint8_t j=map(valSensor,0,255,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
+      uint8_t j=map(valSensor,0,1023,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
       for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
-      lcd.write(j>i? 1:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
+          lcd.write(j>i? 0:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
+         
       }
    }                       
 }
@@ -188,7 +192,7 @@ bool sourceIsQuiet(int ch1, int ch2){
 
 
 bool sourceIsLoud(int ch1, int ch2){
-  return (ch1 >= LOUD_TRESHOLD) || (ch2 >= LOUD_TRESHOLD);
+  return (ch1 >= LOUD_TRESHOLD) && (ch2 >= LOUD_TRESHOLD);
 }
 
 
@@ -299,7 +303,7 @@ void processWebClient(){
 void setup() {
   lcd.init();                     
   lcd.backlight();// Включаем подсветку дисплея
-  lcd.createChar(1, symbol);                           //  Загружаем символ из массива symbol в первую ячейку ОЗУ дисплея
+  lcd.createChar(0, symbol0);                           //  Загружаем символ из массива symbol0 в нулевую ячейку ОЗУ дисплея
   analogReference(INTERNAL);
   pinMode(SOURCE_OUTPUT_1, OUTPUT);
   pinMode(SOURCE_OUTPUT_2, OUTPUT);
@@ -308,6 +312,10 @@ void setup() {
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
   pinMode(LedPin, OUTPUT);
+  pinMode(PRIMARY_SOURCE_LEFT_INPUT, INPUT);
+  pinMode(PRIMARY_SOURCE_RIGHT_INPUT, INPUT);
+  pinMode(SECONDARY_SOURCE_LEFT_INPUT, INPUT);
+  pinMode(SECONDARY_SOURCE_RIGHT_INPUT, INPUT);
 
 
   lcd.createChar(2, bukva_I);      // Создаем символ под номером 2
@@ -341,7 +349,8 @@ void keys(){       // выполнять процедуру раз в цикл
 void loop() {
   
   keys(); // ввод
-  if(currentMillis - previousMillis > interval && frame_N != 0)  //Если счетчик достиг интервала то отобразить главный экран 
+  //Если счетчик достиг интервала и мы не находимся в главном меню, то отобразить главное меню 
+  if(currentMillis - previousMillis > interval && frame_N != 0)  
   {
     previousMillis = currentMillis;
     lcd.clear();
@@ -406,7 +415,7 @@ void loop() {
   int primLeft = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
   int primRight = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
 
-  primRight = primLeft; //FOR DEBUG!!!!!
+  //primRight = primLeft; //FOR DEBUG!!!!!
   bool soundIsAbsent = sourceIsQuiet(primLeft, primRight);
   bool soundIsPresent = sourceIsLoud(primLeft, primRight);
   
@@ -455,16 +464,23 @@ changeSourceTo(state);
 
 // --------------Окно №0------------------
 void frame_0(){ 
- int ch1 = (processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT) / 4);
- int ch2 = (processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT) / 4);
+ // считываем входные значения уровней звука для индикаторов уровня
+ long ch0 = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
+ long ch1 = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
+ long ch2 = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
+ long ch3 = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
+ // усредняем данные для отображения правый + левый канал
+ int chMAIN = (ch0 + ch1) / 2;
+ int chRESERV = (ch2 + ch3) / 2;
  lcd.setCursor(0,0);
  lcd.print("1");
  lcd.setCursor(1,0);
- levelmetr(ch1);
- Serial.println(ch1);
+ // отправляем данные на иникатор уровня. выводим индикатор на дисплей
+ levelmetr(chMAIN);
+ Serial.println(chMAIN);
  lcd.setCursor(0,1);
  lcd.print("2");
- levelmetr(ch2);
+ levelmetr(chRESERV);
  lcd.setCursor(12,0);
  // lcd.print("PE\4\2M ");
  if ((CONTROL_TYPE == 0) || (CONTROL_TYPE == 1)) {
