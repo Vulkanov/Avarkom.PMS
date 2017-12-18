@@ -1,5 +1,5 @@
 #include <SPI.h> // probably needed for ethernet shield
-#include <Ethernet.h>
+#include <Ethernet2.h>
 #include <stdio.h>
 #include <EEPROM.h>
 #include <Wire.h>
@@ -86,7 +86,7 @@ byte quiet_treshold = EEPROM.read(EPR_quiet_treshold);
 int QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);    //0;   //порог перехода на резерв
 byte loud_treshold = EEPROM.read(EPR_loud_treshold);
 int LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023); //60;   //порог восстановления на основной
-const byte NUM_OF_SAMPLES = 128;
+const long NUM_OF_SAMPLES = 128;
 
 byte SOURCE_STATE;
 const byte SOUND = 0;
@@ -113,8 +113,8 @@ EthernetServer webServer(80);
 EthernetServer commandServer(PORT);
 
 //=============FUNCTIONS====================
-//========== драйвер кнопок ========
 
+//драйвер кнопок
 byte D4 =4; //right
 byte D5 =5; //down
 byte D6 =6; //up
@@ -153,6 +153,7 @@ if (digitalRead(D4) == LOW || digitalRead(D5) == LOW || digitalRead(D6) == LOW |
 
 //индикатор уровня
 uint8_t symbol0[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //  Определяем массив который содержит полностью закрашенный символ
+uint8_t symbol1[8] = {B00000,B00000,B00000,B10101,B00000,B00000,B00000,B00000,};
 void levelmetr(int valSensor){
   if (valSensor <= 8)  {
      lcd.print("HET 3B\5KA!");
@@ -160,12 +161,13 @@ void levelmetr(int valSensor){
      else if (valSensor > 8) {
       uint8_t j=map(valSensor,0,1023,0,12);                //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
       for(uint8_t i=0; i<10; i++){                         //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
-          lcd.write(j>i? 0:32);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
+          lcd.write(j>i? 0:1);                            //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)
          
       }
    }                       
 }
 
+//переключатель реле и сигнализация
 void changeSourceTo(int source){
   digitalWrite(SOURCE_OUTPUT_1, source);
   digitalWrite(SOURCE_OUTPUT_2, source);
@@ -174,15 +176,19 @@ void changeSourceTo(int source){
   
 }
 
-
-int processAnalogValue(int channel){
+//считывание и усреднение сигнала
+long processAnalogValue(int channel){
   long sygnal = 0;
 
   for (int i=0; i < NUM_OF_SAMPLES; i++) {
+    
     sygnal += analogRead(channel);
     delayMicroseconds(SAMPLING_DELAY);
   }
-  return sygnal / NUM_OF_SAMPLES; 
+  sygnal = sygnal / NUM_OF_SAMPLES - 512;
+  if (sygnal < 0) sygnal = -sygnal;
+  sygnal = map(sygnal,0,511,0,1023);
+  return sygnal ; 
 }
 
 
@@ -275,7 +281,9 @@ void processWebClient(){
           client.println("Content-Type: text/html");
           client.println();
           
-          client.println("<cke:html><cke:body bgcolor=#FFFFFF>AVARKOM PMS WEB INTERFACE</cke:body></cke:html>");        
+          client.println("<cke:html><cke:body bgcolor=#FFFFFF>AVARKOM PMS WEB INTERFACE</cke:body></cke:html></br>"); 
+          client.println(CONTROL_TYPE);
+          client.println(SOURCE_STATE);       
 
           break;
         }
@@ -301,10 +309,13 @@ void processWebClient(){
 //=============PROGRAMM====================
 
 void setup() {
+  analogReference(DEFAULT);
+  delay(1000);
   lcd.init();                     
   lcd.backlight();// Включаем подсветку дисплея
-  lcd.createChar(0, symbol0);                           //  Загружаем символ из массива symbol0 в нулевую ячейку ОЗУ дисплея
-  analogReference(INTERNAL);
+  lcd.createChar(0, symbol0);   
+  lcd.createChar(1, symbol1);  //  Загружаем символ из массива symbol0 в нулевую ячейку ОЗУ дисплея
+ // analogReference(INTERNAL);
   pinMode(SOURCE_OUTPUT_1, OUTPUT);
   pinMode(SOURCE_OUTPUT_2, OUTPUT);
   pinMode(D4, INPUT);
@@ -476,13 +487,12 @@ void frame_0(){
  lcd.print("1");
  lcd.setCursor(1,0);
  // отправляем данные на иникатор уровня. выводим индикатор на дисплей
- levelmetr(chMAIN);
- Serial.println(chMAIN);
+ levelmetr(ch0);
+ Serial.println(ch0);
  lcd.setCursor(0,1);
  lcd.print("2");
  levelmetr(chRESERV);
  lcd.setCursor(12,0);
- // lcd.print("PE\4\2M ");
  if ((CONTROL_TYPE == 0) || (CONTROL_TYPE == 1)) {
   lcd.print("P\5\3H");
   lcd.setCursor(12,1);
