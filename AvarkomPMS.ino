@@ -222,6 +222,7 @@ bool receiveCommand(EthernetClient client){
 
 
 void executeCommand(EthernetClient client){
+  char reply[12];
   Serial.println(command);
   // comands can be:
   // PRIM - go to manual mode and use primary source
@@ -234,17 +235,17 @@ void executeCommand(EthernetClient client){
   char getState[] = "STAT\r";
 
   if (strcmp(command, setToPrimary) == 0){
-    Serial.println("prim mode");
-    CONTROL_TYPE = PRIMARY_SOURCE;  
+    sprintf(reply, "%s", "prim mode");
+    CONTROL_TYPE = MANUAL;  
     changeSourceTo(PRIMARY_SOURCE);
   }
   else if (strcmp(command, setToSecondary) == 0){
-    Serial.println("sec mode");
-    CONTROL_TYPE = SECONDARY_SOURCE;  
+    sprintf(reply, "%s", "scnd mode");
+    CONTROL_TYPE = MANUAL;  
     changeSourceTo(SECONDARY_SOURCE);
   }
   else if (strcmp(command, setToAutoMode) == 0){
-    Serial.println("auto mode");
+    sprintf(reply, "%s", "auto mode");
     CONTROL_TYPE = AUTO;
   }
   else if (strcmp(command, getState) == 0){
@@ -253,13 +254,12 @@ void executeCommand(EthernetClient client){
     int scndLeft = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
     int scndRight = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
     
-    char reply[12];
     sprintf(reply, "%04d:%04d:%1d:%1d", primLeft, primRight, CONTROL_TYPE, CURRENT_SOURCE);
-    client.println(reply);
-    delay(1);
-    Serial.println(reply);
   }
 
+  client.println(reply);
+  delay(1);
+  Serial.println(reply);
   commandIndex = 0;
 }
 
