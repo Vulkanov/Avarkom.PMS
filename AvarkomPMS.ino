@@ -1,10 +1,14 @@
-#include <SPI.h> // probably needed for ethernet shield
-#include <Ethernet2.h>
+#include <SPI.h> // возможно, необходима для сетевого шилда
+
+// использовать одну из следующих библиотек 
+//в зависимости от версии сетевого шилда
+#include <Ethernet.h>
+// #include <Ethernet2.h> 
+
 #include <stdio.h>
 #include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 
 #define Pin4  4  //          Up
 #define Pin5  5  //          Dwn
@@ -41,12 +45,12 @@ byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; 
 byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
 
 
-byte CONTROL_TYPE=2;
+byte CONTROL_TYPE;
 const byte PRIMARY_SOURCE = 0;
 const byte SECONDARY_SOURCE = 1;
 const byte AUTO = 2;
 
-const byte MAX_COMMAND_LENGTH = 200;
+const byte MAX_COMMAND_LENGTH = 10;
 char command[MAX_COMMAND_LENGTH];
 byte commandIndex = 0;
 
@@ -65,19 +69,13 @@ byte EPR_silence_timeout = 52;
 byte EPR_sound_timeout = 53;
 
 
-byte PORT=EEPROM.read(EPR_PORT);  // Порт
-byte Ip1=EEPROM.read(EPR_Ip1);   // Ip1
-byte Ip2=EEPROM.read(EPR_Ip2);   // Ip2
-byte Ip3=EEPROM.read(EPR_Ip3);   // Ip3
-byte Ip4=EEPROM.read(EPR_Ip4);   // Ip4
-byte Mask1=EEPROM.read(EPR_Mask1);   // Mask1
-byte Mask2=EEPROM.read(EPR_Mask2);   // Mask2
-byte Mask3=EEPROM.read(EPR_Mask3);   // Mask3
-byte Mask4=EEPROM.read(EPR_Mask4);   // Mask4
-
+// параметры сети
+byte PORT;  // Порт для работы с приложением (интерфейсом)
+byte Ip1, Ip2, Ip3, Ip4;
+byte Mask1, Mask2, Mask3, Mask4;  
 
 long timeMark;
-const byte SAMPLING_DELAY = 3; // usec
+const byte SAMPLING_DELAY = 3; // микросекунд
 byte silence_timeout = EEPROM.read(EPR_silence_timeout);
 long SILENCE_TIMEOUT = silence_timeout*1000;  // в секунды
 byte sound_timeout = EEPROM.read(EPR_sound_timeout);
@@ -101,16 +99,15 @@ const byte SECONDARY_SOURCE_RIGHT_INPUT = A3;
 
 const byte SOURCE_OUTPUT_1 = 2;
 const byte SOURCE_OUTPUT_2 = 3;
-const byte LedPin = 8;
+const byte AutoStateIndicatorLED = 8;
 byte CURRENT_SOURCE;
-
-
 
 // Переменные Меню
 byte frame_N=0; // номер показ окна
 
 EthernetServer webServer(80);
-EthernetServer commandServer(PORT);
+EthernetServer commandServer(90); // ИСПРАВИТЬ!!!!
+LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 
 //=============FUNCTIONS====================
 
@@ -167,162 +164,69 @@ void levelmetr(int valSensor){
    }                       
 }
 
-//переключатель реле и сигнализация
+// переключение источников звука
 void changeSourceTo(int source){
   digitalWrite(SOURCE_OUTPUT_1, source);
   digitalWrite(SOURCE_OUTPUT_2, source);
-  CURRENT_SOURCE = source;
-  if (CONTROL_TYPE == AUTO) digitalWrite(LedPin, source);
+  CURRENT_SOURCE = source;  
+}
+
+byte getValidOctetOrDefault(byte octetAddr, byte defaultOctetValue){
+  // для отладки - проблема с EEPROM!!
+  return defaultOctetValue;
   
-}
-
-//считывание и усреднение сигнала
-long processAnalogValue(int channel){
-  long sygnal = 0;
-
-  for (int i=0; i < NUM_OF_SAMPLES; i++) {
-    
-    sygnal += analogRead(channel);
-    delayMicroseconds(SAMPLING_DELAY);
+  byte octet = EEPROM.read(octetAddr);
+  if (octet != 255 && octet != 0){  
+    return octet;
   }
-  sygnal = sygnal / NUM_OF_SAMPLES - 512;
-  if (sygnal < 0) sygnal = -sygnal;
-  sygnal = map(sygnal,0,511,0,1023);
-  return sygnal ; 
-}
-
-
-bool sourceIsQuiet(int ch1, int ch2){
-  return (ch1 <= QUIET_TRESHOLD) || (ch2 <= QUIET_TRESHOLD);
-}
-
-
-bool sourceIsLoud(int ch1, int ch2){
-  return (ch1 >= LOUD_TRESHOLD) && (ch2 >= LOUD_TRESHOLD);
-}
-
-
-bool receiveCommand(EthernetClient client){
-  if (commandIndex >= MAX_COMMAND_LENGTH - 1){
-    return true;
-  }
-
-  while (client.connected()) {
-    if (client.available()) {
-      char incomingByte = client.read();  
-      command[commandIndex++] = incomingByte;      
-      
-      if (incomingByte == '\r' || commandIndex >= MAX_COMMAND_LENGTH){
-        return true;  
-      }
-    }   
-  }
-  return false;
-}
-
-
-void executeCommand(EthernetClient client){
-  char reply[12];
-  Serial.println(command);
-  // comands can be:
-  // PRIM - go to manual mode and use primary source
-  // SCND - go to manual mode and use secondary source
-  // AUTO - go to auto mode
-  // STAT - get state
-  char setToPrimary[] = "PRIM\r";
-  char setToSecondary[] = "SCND\r";
-  char setToAutoMode[] = "AUTO\r";
-  char getState[] = "STAT\r";
-
-  if (strcmp(command, setToPrimary) == 0){
-    sprintf(reply, "%s", "prim mode");
-    CONTROL_TYPE = MANUAL;  
-    changeSourceTo(PRIMARY_SOURCE);
-  }
-  else if (strcmp(command, setToSecondary) == 0){
-    sprintf(reply, "%s", "scnd mode");
-    CONTROL_TYPE = MANUAL;  
-    changeSourceTo(SECONDARY_SOURCE);
-  }
-  else if (strcmp(command, setToAutoMode) == 0){
-    sprintf(reply, "%s", "auto mode");
-    CONTROL_TYPE = AUTO;
-  }
-  else if (strcmp(command, getState) == 0){
-    int primLeft = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
-    int primRight = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
-    int scndLeft = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
-    int scndRight = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
-    
-    sprintf(reply, "%04d:%04d:%1d:%1d", primLeft, primRight, CONTROL_TYPE, CURRENT_SOURCE);
-  }
-
-  client.println(reply);
-  delay(1);
-  Serial.println(reply);
-  commandIndex = 0;
-}
-
-
-void processWebClient(){
-  EthernetClient client = webServer.available();
-  if (client) {
-    // an http request ends with a blank line
-    boolean currentLineIsBlank = true;
-    while (client.connected()) {
-      if (client.available()) {
-        char c = client.read();        
-        // if you've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so you can send a reply
-        if (c == '\n' && currentLineIsBlank) {
-          // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println();
-          
-          client.println("<cke:html><cke:body bgcolor=#FFFFFF>AVARKOM PMS WEB INTERFACE</cke:body></cke:html></br>"); 
-          client.println(CONTROL_TYPE);
-          client.println(SOURCE_STATE);       
-
-          break;
-        }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } 
-        else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
-      }
-    }
-    // give the web browser time to receive the data
-    delay(1);
-    // close the connection:
-    client.stop();
+  else{  
+    return defaultOctetValue;
   }
 }
 
+void initializeDeviceParameters(){
+  // читаем октеты IP адреса
+  Ip1=getValidOctetOrDefault(EPR_Ip1, 10);  
+  Ip2=getValidOctetOrDefault(EPR_Ip2, 0);  
+  Ip3=getValidOctetOrDefault(EPR_Ip3, 0);   
+  Ip4=getValidOctetOrDefault(EPR_Ip4, 100); 
 
+  PORT=EEPROM.read(EPR_PORT);  // Порт
+
+  // читаем маску подсети
+  Mask1=EEPROM.read(EPR_Mask1);   // Mask1
+  Mask2=EEPROM.read(EPR_Mask2);   // Mask2
+  Mask3=EEPROM.read(EPR_Mask3);   // Mask3
+  Mask4=EEPROM.read(EPR_Mask4);   // Mask4
+
+  /*
+  SILENCE_TIMEOUT = EEPROM.read(EPR_silence_timeout)*1000;  // в секунды
+  SOUND_TIMEOUT = EEPROM.read(EPR_sound_timeout)*1000;  // в секунды
+  QUIET_TRESHOLD = map(EEPROM.read(EPR_quiet_treshold),0,100,0,1023);    //0;   //порог перехода на резерв
+  LOUD_TRESHOLD = map(EEPROM.read(EPR_loud_treshold),0,100,0,1023); //60;   //порог восстановления на основной
+  */
+}
 
 //=============PROGRAMM====================
 
 void setup() {
+  initializeDeviceParameters();
+  
   analogReference(DEFAULT);
+  
   delay(1000);
   lcd.init();                     
   lcd.backlight();// Включаем подсветку дисплея
   lcd.createChar(0, symbol0);   
   lcd.createChar(1, symbol1);  //  Загружаем символ из массива symbol0 в нулевую ячейку ОЗУ дисплея
- // analogReference(INTERNAL);
+ 
   pinMode(SOURCE_OUTPUT_1, OUTPUT);
   pinMode(SOURCE_OUTPUT_2, OUTPUT);
   pinMode(D4, INPUT);
   pinMode(D5, INPUT);
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
-  pinMode(LedPin, OUTPUT);
+  pinMode(AutoStateIndicatorLED, OUTPUT);
   pinMode(PRIMARY_SOURCE_LEFT_INPUT, INPUT);
   pinMode(PRIMARY_SOURCE_RIGHT_INPUT, INPUT);
   pinMode(SECONDARY_SOURCE_LEFT_INPUT, INPUT);
@@ -334,14 +238,16 @@ void setup() {
   lcd.createChar(4, bukva_G);      // Создаем символ под номером 4
   lcd.createChar(5, bukva_Y);
   lcd.createChar(6, bukva_D); 
-  lcd.createChar(7, bukva_L); 
+  lcd.createChar(7, bukva_L);  
 
-  
   byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
   IPAddress ip(Ip1,Ip2,Ip3,Ip4);
   Ethernet.begin(mac, ip);
-  
+
+  // commandServer = EthernetServer(PORT);
   commandServer.begin();
+
+  // webServer = EthernetServer(80);
   webServer.begin();
   
   CONTROL_TYPE = AUTO;
@@ -349,7 +255,7 @@ void setup() {
   
   changeSourceTo(PRIMARY_SOURCE);
 
-  // for easy debugging
+  // для отладки
   Serial.begin(9600);
 }
 
@@ -358,6 +264,13 @@ void keys(){       // выполнять процедуру раз в цикл
  };
  
 void loop() {
+  // сигнализируем, если в автоматическом режиме
+  if (CONTROL_TYPE == AUTO){
+    digitalWrite(AutoStateIndicatorLED, HIGH);
+  }
+  else{
+    digitalWrite(AutoStateIndicatorLED, LOW);
+  }
   
   keys(); // ввод
   //Если счетчик достиг интервала и мы не находимся в главном меню, то отобразить главное меню 
@@ -411,7 +324,7 @@ void loop() {
     case 130:frame_130();
       break;
  }
- 
+
   EthernetClient commandClient = commandServer.available();
   if (receiveCommand(commandClient)){
     executeCommand(commandClient);
@@ -488,7 +401,7 @@ void frame_0(){
  lcd.setCursor(1,0);
  // отправляем данные на иникатор уровня. выводим индикатор на дисплей
  levelmetr(ch0);
- Serial.println(ch0);
+ //Serial.println(ch0);
  lcd.setCursor(0,1);
  lcd.print("2");
  levelmetr(chRESERV);
