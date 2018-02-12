@@ -2,7 +2,7 @@
  * В ЭТОМ ФАЙЛЕ НАХОДИТСЯ ВСЕ, ЧТО СВЯЗАНО С 
  * МЕНЮ НА LCD ДИСПЛЕЕ
  */
-
+ 
 //драйвер кнопок
 
 int btn(){
@@ -40,11 +40,14 @@ void keys(){       // выполнять процедуру раз в цикл
   {
     previousMillis = currentMillis;
     lcd.clear();
-    EEPROM.update(EPR_silence_timeout,silence_timeout);
-    EEPROM.update(EPR_sound_timeout,sound_timeout);
-    EEPROM.update(EPR_quiet_treshold,quiet_treshold);
-    EEPROM.update(EPR_loud_treshold,loud_treshold);
+    EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
+    EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
+    EEPROM.update(EPR_quiet_treshold, QUIET_TRESHOLD);
+    EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
     EEPROM.update(EPR_PORT, PORT);
+    updateOctetsInEEPROM(ip, EPR_Ip);
+    updateOctetsInEEPROM(netmask, EPR_Mask);
+    /*
     EEPROM.update(EPR_Ip1, Ip1);
     EEPROM.update(EPR_Ip2, Ip2);
     EEPROM.update(EPR_Ip3, Ip3);
@@ -53,6 +56,7 @@ void keys(){       // выполнять процедуру раз в цикл
     EEPROM.update(EPR_Mask2, Mask2);
     EEPROM.update(EPR_Mask3, Mask3);
     EEPROM.update(EPR_Mask4, Mask4); 
+    */
     frame_N = 0;
   }
 
@@ -149,36 +153,34 @@ switch (key_N) {
 void frame_10(){ 
  lcd.setCursor(0,0);
  lcd.print(">HA PE3EPB ");
- lcd.print(silence_timeout,DEC);
- lcd.setCursor(13,0);
+ lcd.print(SILENCE_TIMEOUT, DEC);
+ lcd.setCursor(13, 0);
  lcd.print("CEK");
- lcd.setCursor(0,1);
+ lcd.setCursor(0, 1);
  lcd.print(" HA OCHOBH ");
- lcd.print(sound_timeout,DEC);
+ lcd.print(SOUND_TIMEOUT, DEC);
  lcd.setCursor(13,1);
  lcd.print("CEK");
    switch (key_N) {
     case 0:// right
       lcd.clear();
-      if (silence_timeout < 20) silence_timeout++; 
-      else silence_timeout=1;
-      SILENCE_TIMEOUT = silence_timeout*1000;
+      if (SILENCE_TIMEOUT < 20) SILENCE_TIMEOUT++; 
+      else SILENCE_TIMEOUT=1;
       break;   
     case 1:
       lcd.clear();
-      EEPROM.update(EPR_silence_timeout,silence_timeout);
+      EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
       frame_N=0; // up
       break;
     case 2:
       lcd.clear();
-      EEPROM.update(EPR_silence_timeout,silence_timeout);
+      EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
       frame_N=20; // down
       break;
     case 3:  // left
       lcd.clear();
-      if (silence_timeout > 1) silence_timeout--; 
-      else silence_timeout=20;   
-      SILENCE_TIMEOUT = silence_timeout*1000;
+      if (SILENCE_TIMEOUT > 1) SILENCE_TIMEOUT--; 
+      else SILENCE_TIMEOUT=20;   
       break;
  } 
 };
@@ -186,36 +188,34 @@ void frame_10(){
 void frame_20(){ 
  lcd.setCursor(0,0);
  lcd.print(" HA PE3EPB ");
- lcd.print(silence_timeout,DEC);
+ lcd.print(SILENCE_TIMEOUT,DEC);
  lcd.setCursor(13,0);
  lcd.print("CEK");
  lcd.setCursor(0,1);
  lcd.print(">HA OCHOBH ");
- lcd.print(sound_timeout,DEC);
+ lcd.print(SOUND_TIMEOUT,DEC);
  lcd.setCursor(13,1);
  lcd.print("CEK");
    switch (key_N) {
     case 0:// right
       lcd.clear();
-      if (sound_timeout <= 19) sound_timeout++; 
-      else sound_timeout = 1;
-      SOUND_TIMEOUT = sound_timeout*1000;
+      if (SOUND_TIMEOUT <= 19) SOUND_TIMEOUT++; 
+      else SOUND_TIMEOUT = 1;
       break;   
     case 1:// up
       lcd.clear();
-      EEPROM.update(EPR_sound_timeout,sound_timeout);
+      EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
       frame_N=10; 
       break;
     case 2: // down
       lcd.clear();
-      EEPROM.update(EPR_sound_timeout,sound_timeout);
+      EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
       frame_N=30;
       break;
     case 3: // left
       lcd.clear(); 
-      if (sound_timeout > 2) sound_timeout-- ;
-      else sound_timeout = 20;
-      SOUND_TIMEOUT = sound_timeout*1000;
+      if (SOUND_TIMEOUT > 2) SOUND_TIMEOUT-- ;
+      else SOUND_TIMEOUT = 20;
       break;
  } 
 };
@@ -224,37 +224,35 @@ void frame_30(){
  lcd.setCursor(0,0);
  lcd.print(">");
  lcd.print("\6ETEKTOP  ");
- lcd.print(quiet_treshold,DEC);
+ lcd.print(QUIET_TRESHOLD,DEC);
  lcd.setCursor(14,0);
  lcd.print("%");
  lcd.setCursor(0,1);
  lcd.print(" ");
  lcd.print("BO3BPAT   ");
- lcd.print(loud_treshold,DEC);
+ lcd.print(LOUD_TRESHOLD,DEC);
  lcd.setCursor(14,1);
  lcd.print("%");
    switch (key_N) {
     case 0:// right
       lcd.clear();
-      if (quiet_treshold < 100) quiet_treshold = quiet_treshold + 5; 
-      else quiet_treshold = 5;
-      QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);
+      if (QUIET_TRESHOLD < 100) QUIET_TRESHOLD = QUIET_TRESHOLD + 5; 
+      else QUIET_TRESHOLD = 5;
       break;   
     case 1:// up
       lcd.clear();
-      EEPROM.update(EPR_quiet_treshold,quiet_treshold);
+      EEPROM.update(EPR_quiet_treshold, QUIET_TRESHOLD);
       frame_N=20; 
       break;
     case 2:// down
       lcd.clear();
-      EEPROM.update(EPR_quiet_treshold,quiet_treshold);
+      EEPROM.update(EPR_quiet_treshold, QUIET_TRESHOLD);
       frame_N=40; 
       break;
     case 3: // left
       lcd.clear();
-      if (quiet_treshold > 5) quiet_treshold = quiet_treshold - 5; 
-      else quiet_treshold = 100;
-      QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);
+      if (QUIET_TRESHOLD > 5) QUIET_TRESHOLD = QUIET_TRESHOLD - 5; 
+      else QUIET_TRESHOLD = 100;
       break;   
  } 
 };
@@ -263,36 +261,34 @@ void frame_40(){
  lcd.setCursor(0,0);
  lcd.print(" ");
  lcd.print("\6ETEKTOP  ");
- lcd.print(quiet_treshold,DEC);
+ lcd.print(QUIET_TRESHOLD,DEC);
  lcd.setCursor(14,0);
  lcd.print("%");
  lcd.setCursor(0,1);
  lcd.print(">");
  lcd.print("BO3BPAT   ");
- lcd.print(loud_treshold,DEC);
+ lcd.print(LOUD_TRESHOLD,DEC);
  lcd.setCursor(14,1);
  lcd.print("%");
    switch (key_N) {
     case 0:// right
-      if (loud_treshold < 100) loud_treshold = loud_treshold + 5; 
-      else loud_treshold = 5;
-      LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023);
+      if (LOUD_TRESHOLD < 100) LOUD_TRESHOLD = LOUD_TRESHOLD + 5; 
+      else LOUD_TRESHOLD = 5;
       lcd.clear();
       break;   
     case 1:
       lcd.clear();
       frame_N=30; // up
-      EEPROM.update(EPR_loud_treshold,loud_treshold);
+      EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
       break;
     case 2:
       lcd.clear();
       frame_N=50; // down
-      EEPROM.update(EPR_loud_treshold,loud_treshold);
+      EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
       break;
     case 3: // left
-      if (loud_treshold > 5) loud_treshold = loud_treshold -5; 
-      else loud_treshold = 100;
-      LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023);
+      if (LOUD_TRESHOLD > 5) LOUD_TRESHOLD = LOUD_TRESHOLD -5; 
+      else LOUD_TRESHOLD = 100;
       lcd.clear();
       break;
  } 
@@ -328,34 +324,40 @@ void frame_60(){
  lcd.print("IP ADRESS :     ");
  lcd.setCursor(0,1);
  lcd.print(">");
- lcd.print(Ip1,DEC);
+ lcd.print(ip[0],DEC);
  lcd.print(".");
- lcd.print(Ip2,DEC);
+ lcd.print(ip[1],DEC);
  lcd.print(".");
- lcd.print(Ip3,DEC);
+ lcd.print(ip[2],DEC);
  lcd.print(".");
- lcd.print(Ip4,DEC);
+ lcd.print(ip[3],DEC);
  lcd.print("    ");
   switch (key_N) {
-    case 0:Ip1++; // right
+    case 0:ip[0]++; // right
       break;   
     case 1: // up
       lcd.clear();
+      updateOctetsInEEPROM(ip, EPR_Ip);
+      /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
+      */
       frame_N=50;
       break;
     case 2:// down
       lcd.clear();
+      updateOctetsInEEPROM(ip, EPR_Ip);
+      /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
+      */
       frame_N=70;
       break;
-    case 3: Ip1-- ; // left
+    case 3: ip[0]-- ; // left
       break;
  } 
 };
@@ -365,16 +367,16 @@ void frame_70(){
  lcd.setCursor(0,0);
  lcd.print("IP ADRESS :     ");
  lcd.setCursor(0,1);
- lcd.print(Ip1,DEC);
+ lcd.print(ip[0],DEC);
  lcd.print(".>");
- lcd.print(Ip2,DEC);
+ lcd.print(ip[1],DEC);
  lcd.print(".");
- lcd.print(Ip3,DEC);
+ lcd.print(ip[2],DEC);
  lcd.print(".");
- lcd.print(Ip4,DEC);
+ lcd.print(ip[3],DEC);
  lcd.print("    ");
    switch (key_N) {
-    case 0:Ip2++; // right
+    case 0:ip[1]++; // right
       break;   
     case 1:// up
       lcd.clear();
@@ -385,7 +387,7 @@ void frame_70(){
       frame_N=80;
       break;
     case 3: 
-      Ip2-- ; // left
+      ip[1]-- ; // left
       break;
  } 
 };
@@ -395,34 +397,40 @@ void frame_80(){
  lcd.setCursor(0,0);
  lcd.print("IP ADRESS :     ");
  lcd.setCursor(0,1);
- lcd.print(Ip1,DEC);
+ lcd.print(ip[0],DEC);
  lcd.print(".");
- lcd.print(Ip2,DEC);
+ lcd.print(ip[1],DEC);
  lcd.print(".>");
- lcd.print(Ip3,DEC);
+ lcd.print(ip[2],DEC);
  lcd.print(".");
- lcd.print(Ip4,DEC);
+ lcd.print(ip[3],DEC);
  lcd.print("    ");
    switch (key_N) {
-    case 0:Ip3++; // right
+    case 0:ip[2]++; // right
       break;   
     case 1:// up
       lcd.clear();
+      updateOctetsInEEPROM(ip, EPR_Ip);
+      /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
+      */
       frame_N=70; 
       break;
     case 2:// down
       lcd.clear();
+      updateOctetsInEEPROM(ip, EPR_Ip);
+      /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
+      */
       frame_N=90; 
       break;
-    case 3: Ip3-- ; // left
+    case 3: ip[2]-- ; // left
       break;
  } 
 };
@@ -432,36 +440,42 @@ void frame_90(){
  lcd.setCursor(0,0);
  lcd.print("IP ADRESS :     ");
  lcd.setCursor(0,1);
- lcd.print(Ip1,DEC);
+ lcd.print(ip[0],DEC);
  lcd.print(".");
- lcd.print(Ip2,DEC);
+ lcd.print(ip[1],DEC);
  lcd.print(".");
- lcd.print(Ip3,DEC);
+ lcd.print(ip[2],DEC);
  lcd.print(".>");
- lcd.print(Ip4,DEC);
+ lcd.print(ip[3],DEC);
  lcd.print("      ");
    switch (key_N) {
     case 0: // right
-      Ip4++ ; 
+      ip[3]++ ; 
       break;   
     case 1: // up
     lcd.clear();
+    updateOctetsInEEPROM(ip, EPR_Ip);
+    /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
-      EEPROM.update(EPR_Ip4, Ip4);   
+      EEPROM.update(EPR_Ip4, Ip4); 
+      */  
       frame_N=80;
       break;
     case 2:// down
     lcd.clear();
+    updateOctetsInEEPROM(ip, EPR_Ip);
+    /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
+      */
       frame_N=100; 
       break;
     case 3: // left
-      Ip4--; 
+      ip[3]--; 
       break;
  } 
 };
@@ -471,36 +485,42 @@ void frame_100(){
  lcd.print("MASK :          ");
  lcd.setCursor(0,1);
  lcd.print(">");
- lcd.print(Mask1,DEC);
+ lcd.print(netmask[0],DEC);
  lcd.print(".");
- lcd.print(Mask2,DEC);
+ lcd.print(netmask[1],DEC);
  lcd.print(".");
- lcd.print(Mask3,DEC);
+ lcd.print(netmask[2],DEC);
  lcd.print(".");
- lcd.print(Mask4,DEC);
+ lcd.print(netmask[3],DEC);
  lcd.print("        ");
    switch (key_N) {
     case 0:// right
-      Mask1++; 
+      netmask[0]++; 
       break;   
     case 1:// up
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=90;
     break;
     case 2:// down
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+    /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=110;
       lcd.clear();
       break;
     case 3: // left
-      Mask1-- ; 
+      netmask[0]-- ; 
       break;
  } 
 };
@@ -509,36 +529,42 @@ void frame_110(){
  lcd.setCursor(0,0);
  lcd.print("MASK :          ");
  lcd.setCursor(0,1);
- lcd.print(Mask1,DEC);
+ lcd.print(netmask[0],DEC);
  lcd.print(".>");
- lcd.print(Mask2,DEC);
+ lcd.print(netmask[1],DEC);
  lcd.print(".");
- lcd.print(Mask3,DEC);
+ lcd.print(netmask[2],DEC);
  lcd.print(".");
- lcd.print(Mask4,DEC);
+ lcd.print(netmask[3],DEC);
  lcd.print("       ");
    switch (key_N) {
     case 0:// right
-      Mask2++; 
+      netmask[1]++; 
       break;   
     case 1:// up
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=100; 
       break;
     case 2:// down
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=120; 
       break;
     case 3: // left
-      Mask2-- ; 
+      netmask[1]-- ; 
       break;
  } 
 };
@@ -547,36 +573,42 @@ void frame_120(){
  lcd.setCursor(0,0);
  lcd.print("MASK :          ");
  lcd.setCursor(0,1);
- lcd.print(Mask1,DEC);
+ lcd.print(netmask[0],DEC);
  lcd.print(".");
- lcd.print(Mask2,DEC);
+ lcd.print(netmask[1],DEC);
  lcd.print(".>");
- lcd.print(Mask3,DEC);
+ lcd.print(netmask[2],DEC);
  lcd.print(".");
- lcd.print(Mask4,DEC);
+ lcd.print(netmask[3],DEC);
  lcd.print("        ");
    switch (key_N) {
     case 0:// right
-      Mask3++; 
+      netmask[2]++; 
       break;   
     case 1:// up
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=110; 
       break;
     case 2:// down
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
-      EEPROM.update(EPR_Mask4, Mask4); 
+      EEPROM.update(EPR_Mask4, Mask4);
+      */ 
     frame_N=130; 
       break;
     case 3: // left
-      Mask3-- ; 
+      netmask[2]-- ; 
       break;
  } 
 };
@@ -585,36 +617,42 @@ void frame_130(){
  lcd.setCursor(0,0);
  lcd.print("MASK :          ");
  lcd.setCursor(0,1);
- lcd.print(Mask1,DEC);
+ lcd.print(netmask[0],DEC);
  lcd.print(".");
- lcd.print(Mask2,DEC);
+ lcd.print(netmask[1],DEC);
  lcd.print(".");
- lcd.print(Mask3,DEC);
+ lcd.print(netmask[2],DEC);
  lcd.print(".>");
- lcd.print(Mask4,DEC);
+ lcd.print(netmask[3],DEC);
  lcd.print("        ");
    switch (key_N) {
     case 0:// right
-      Mask4++; 
+      netmask[3]++; 
       break;   
     case 1:// up
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
       EEPROM.update(EPR_Mask4, Mask4); 
+      */
       frame_N=120; 
       break;
     case 2: // down
       lcd.clear();
+      updateOctetsInEEPROM(netmask, EPR_Mask);
+      /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
       EEPROM.update(EPR_Mask3, Mask3);
-      EEPROM.update(EPR_Mask4, Mask4); 
+      EEPROM.update(EPR_Mask4, Mask4);
+      */ 
       frame_N=0;
       break;
     case 3: // left
-      Mask4-- ; 
+      netmask[3]-- ; 
       break;
  } 
 };

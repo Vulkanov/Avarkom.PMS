@@ -21,10 +21,6 @@
 #define btnDOWN   2// кнопка  DOWN
 #define btnLEFT   3// кнопка  LEFT
 #define btnNONE   5// кнопки  не нажаты
-//#define PRIMARY_SOURCE_LEFT_INPUT A0
-//#define PRIMARY_SOURCE_RIGHT_INPUT A1
-//#define SECONDARY_SOURCE_LEFT_INPUT A2
-//#define SECONDARY_SOURCE_RIGHT_INPUT A3
 
 byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
 byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
@@ -57,35 +53,21 @@ char command[MAX_COMMAND_LENGTH];
 byte commandIndex = 0;
 
 byte EPR_PORT = 30;
-byte EPR_Ip1 = 10;
-byte EPR_Ip2 = 11;
-byte EPR_Ip3 = 12;
-byte EPR_Ip4 = 13;
-byte EPR_Mask1 = 14;
-byte EPR_Mask2 = 15;
-byte EPR_Mask3 = 16;
-byte EPR_Mask4 = 17;
+byte EPR_Ip = 10; // ВНИМАНИЕ! IP занимает этот адрес и три следующих!
+byte EPR_Mask = 14; // ВНИМАНИЕ! маска подсети занимает этот адрес и три следующих!
+
 byte EPR_quiet_treshold = 50;
 byte EPR_loud_treshold = 51;
 byte EPR_silence_timeout = 52;
 byte EPR_sound_timeout = 53;
 
-
-// параметры сети
-byte PORT;  // Порт для работы с приложением (интерфейсом)
-byte Ip1, Ip2, Ip3, Ip4;
-byte Mask1, Mask2, Mask3, Mask4;  
-
 long timeMark;
 const byte SAMPLING_DELAY = 0; // микросекунд
-byte silence_timeout = EEPROM.read(EPR_silence_timeout);
-long SILENCE_TIMEOUT = silence_timeout*1000;  // в секунды
-byte sound_timeout = EEPROM.read(EPR_sound_timeout);
-long SOUND_TIMEOUT = sound_timeout*1000;  // в секунды
-byte quiet_treshold = EEPROM.read(EPR_quiet_treshold);
-int QUIET_TRESHOLD = map(quiet_treshold,0,100,0,1023);    //0;   //порог перехода на резерв
-byte loud_treshold = EEPROM.read(EPR_loud_treshold);
-int LOUD_TRESHOLD = map(loud_treshold,0,100,0,1023); //60;   //порог восстановления на основной
+
+byte SILENCE_TIMEOUT;
+byte SOUND_TIMEOUT;
+byte QUIET_TRESHOLD;
+byte LOUD_TRESHOLD;
 const long NUM_OF_SAMPLES = 64;
 
 byte SOURCE_STATE;
@@ -119,18 +101,24 @@ byte frame_N=0; // номер показ окна
 uint8_t symbol0[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //Определяем массив который содержит полностью закрашенный символ
 uint8_t symbol1[8] = {B00000,B00000,B00000,B10101,B00000,B00000,B00000,B00000,};
 
+// параметры сети
+byte PORT;  // Порт для работы с приложением (интерфейсом)
+byte ip[4];
+byte netmask[4];
+byte gateway[4];
 
-EthernetServer webServer(80);
-EthernetServer commandServer(90); // ИСПРАВИТЬ!!!!
+EthernetServer *webServer;
+EthernetServer *commandServer;
+
 LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 
-//=============FUNCTIONS====================
+//==========================================================FUNCTIONS==========================================================
 // переключение состояний
 void changeStateTo(int state){
-    CONTROL_TYPE = state;
-    if (state != AUTO){
-      changeSourceTo(state);
-    }
+  CONTROL_TYPE = state;
+  if (state != AUTO){
+    changeSourceTo(state);
+  }
 }
 
 // переключение источников звука
@@ -140,40 +128,64 @@ void changeSourceTo(int source){
   CURRENT_SOURCE = source;  
 }
 
-bool octetsAreValid(byte oct1, byte oct2, byte oct3, byte oct4){
-  // устранение ошибок из-за незаписанного EEPROM
-  if (oct1 == oct2 && oct2 == oct3 && oct3 == oct4){ // если все октеты одинаковы
-    if (oct1 == 255 || oct1 == 0){ // если они все равны 0 или 255 
-      return false;
+void getOctetsFromEEPROM(byte* octets, byte addr){
+  for (int i=0; i<4; i++){
+    octets[i] = EEPROM.read(addr + i);
+  }
+}
+
+
+void updateOctetsInEEPROM(byte* octets, byte addr){
+  for (int i=0; i<4; i++){
+    EEPROM.update(addr + i, octets[i]);
+  }
+}
+
+
+bool octetsAreValid(byte* octets){
+  // проверка на наличие ошибок из-за незаписанного EEPROM
+  // например, устройство не будет работать с IP 255.255.255.255
+  for (byte n = 1; n < 4; n++){ // проверка на равенство всех октетов
+    if (octets[0] != octets[n]){
+      return true;
     }
   }
-  return true;
+
+  // октеты оказались равны, проверяем их значения
+  if (octets[0] == 255 || octets[0] == 0){
+    // исключаем адреса 0.0.0.0 или 255.255.255.255
+    return false;
+  }
+  else {
+    return true;
+  }
 }
+
 
 void initializeDeviceParameters(){
   // читаем октеты IP адреса
-  Ip1=10;  
-  Ip2=0;
-  Ip3=0;
-  Ip4=100;
-
-  PORT=EEPROM.read(EPR_PORT);  // Порт
-
+  getOctetsFromEEPROM(ip, EPR_Ip);
   // читаем маску подсети
-  Mask1=EEPROM.read(EPR_Mask1);   // Mask1
-  Mask2=EEPROM.read(EPR_Mask2);   // Mask2
-  Mask3=EEPROM.read(EPR_Mask3);   // Mask3
-  Mask4=EEPROM.read(EPR_Mask4);   // Mask4
+  getOctetsFromEEPROM(netmask, EPR_Mask);
+  // читаем порт
+  PORT=EEPROM.read(EPR_PORT); 
 
-  /*
-  SILENCE_TIMEOUT = EEPROM.read(EPR_silence_timeout)*1000;  // в секунды
-  SOUND_TIMEOUT = EEPROM.read(EPR_sound_timeout)*1000;  // в секунды
-  QUIET_TRESHOLD = map(EEPROM.read(EPR_quiet_treshold),0,100,0,1023);    //0;   //порог перехода на резерв
-  LOUD_TRESHOLD = map(EEPROM.read(EPR_loud_treshold),0,100,0,1023); //60;   //порог восстановления на основной
-  */
+  byte deviceMac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
+  IPAddress deviceIp(ip[0], ip[1], ip[2], ip[3]);
+  Ethernet.begin(deviceMac, deviceIp);
+
+  commandServer = new EthernetServer(PORT);
+  commandServer->begin();
+  webServer = new EthernetServer(80);
+  webServer->begin();
+
+  SILENCE_TIMEOUT = EEPROM.read(EPR_silence_timeout);  // в секундах
+  SOUND_TIMEOUT = EEPROM.read(EPR_sound_timeout);  // в секундах
+  QUIET_TRESHOLD = EEPROM.read(EPR_quiet_treshold); // в процентах
+  LOUD_TRESHOLD = EEPROM.read(EPR_loud_treshold); // в процентах
 }
 
-//=============PROGRAMM====================
+//==========================================================PROGRAMM==========================================================
 
 void setup() {
   initializeDeviceParameters();
@@ -205,27 +217,15 @@ void setup() {
   lcd.createChar(5, bukva_Y);
   lcd.createChar(6, bukva_D); 
   lcd.createChar(7, bukva_L);  
-
-  byte mac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
-  IPAddress ip(Ip1,Ip2,Ip3,Ip4);
-  Ethernet.begin(mac, ip);
-
-  // commandServer = EthernetServer(PORT);
-  commandServer.begin();
-
-  // webServer = EthernetServer(80);
-  webServer.begin();
   
-  CONTROL_TYPE = AUTO;
   SOURCE_STATE = SOUND;
-  
-  changeSourceTo(PRIMARY_SOURCE);
+  changeStateTo(AUTO);
 
   if (__DEBUG__){
     Serial.begin(9600);
     Serial.println("End of SETUP method.");
     char ipInfo[32];
-    sprintf(ipInfo, "Avarkom IP is %d.%d.%d.%d", Ip1, Ip2, Ip3, Ip4);
+    sprintf(ipInfo, "Avarkom IP is %d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
     Serial.println(ipInfo);
     Serial.println("=========================");
   }
@@ -244,8 +244,7 @@ void loop() {
   
   keys(); // ввод
   
-
-  EthernetClient commandClient = commandServer.available();
+  EthernetClient commandClient = commandServer->available();
   if (receiveCommand(commandClient)){
     executeCommand(commandClient);
   }
@@ -279,7 +278,7 @@ void loop() {
       return;
       
     case SOUND_DISAPPEARED:
-      if ((millis() - timeMark) >= SILENCE_TIMEOUT){
+      if ((millis() - timeMark) >= (SILENCE_TIMEOUT * 1000)){ // значения таймауток хранятся в секундах
          changeSourceTo(SECONDARY_SOURCE);
          SOURCE_STATE = SILENCE;
       }
@@ -289,7 +288,7 @@ void loop() {
       return;
       
     case SOUND_APPEARED:
-      if ((millis() - timeMark) >= SOUND_TIMEOUT){
+      if ((millis() - timeMark) >= (SOUND_TIMEOUT * 1000)){ // значения таймаутов хранятся в секундах
          changeSourceTo(PRIMARY_SOURCE);
          SOURCE_STATE = SOUND;
       }

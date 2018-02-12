@@ -20,12 +20,16 @@ long processAnalogValue(int channel){
 
 
 bool sourceIsQuiet(int ch1, int ch2){
-  return (ch1 <= QUIET_TRESHOLD) || (ch2 <= QUIET_TRESHOLD);
+  // Значения границ хранятся в процентах
+  float coeff = 10.23;
+  return (ch1 <= round(QUIET_TRESHOLD * coeff)) || (ch2 <= round(QUIET_TRESHOLD * coeff));
 }
 
 
 bool sourceIsLoud(int ch1, int ch2){
-  return (ch1 >= LOUD_TRESHOLD) && (ch2 >= LOUD_TRESHOLD);
+  // Значения границ хранятся в процентах
+  float coeff = 10.23;
+  return (ch1 >= round(LOUD_TRESHOLD * coeff)) && (ch2 >= round(LOUD_TRESHOLD * coeff));
 }
 
 void levelmetr(int valSensor){

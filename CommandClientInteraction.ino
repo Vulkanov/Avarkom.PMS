@@ -30,7 +30,7 @@ void executeCommand(EthernetClient client){
   bool hasSetpoint = false;
   char cmdBody[BODY_LENGTH + 1]; // еше 1 для терминального нуля
   char setpoint[SETPOINT_LENGTH];
-  char reply[12];
+  char reply[21];
   // Команда состоит из тела (присутствует обязательно) и уставки (может отсутствовать).
   // Тело от уставки отделяется знаком '='. В случае если уставки нет, знак равенства
   // также отсутствует, а команда считается запросом. Примеры команд:
@@ -57,22 +57,21 @@ void executeCommand(EthernetClient client){
   char loudTimeout[] = "LTIM"; // установить/получить величину задержки перед переключением в режим "звук присутствует"
   char quietTimeout[] = "QTIM"; // установить/получить величину задержки перед переключением в режим "тишина в канале"
   char ipAddr[] = "ADDR"; // установить/получить IP устройства
+  char port[] = "PORT"; // установить/получить порт для соединения с интерфейсом (приложением)
   char netMask[] = "MASK"; // установить/получить маску подсети устройства
   char gateway[] = "GATE"; // установить/получить шлюз устройства
 
   if (strcmp(cmdBody, setToPrimary) == 0){
     sprintf(reply, "%s", "prim mode");
-    CONTROL_TYPE = PRIMARY_SOURCE;  
-    changeSourceTo(PRIMARY_SOURCE);
+    changeStateTo(PRIMARY_SOURCE);
   }
   else if (strcmp(cmdBody, setToSecondary) == 0){
-    sprintf(reply, "%s", "scnd mode");
-    CONTROL_TYPE = SECONDARY_SOURCE;  
-    changeSourceTo(SECONDARY_SOURCE);
+    sprintf(reply, "%s", "scnd mode");  
+    changeStateTo(SECONDARY_SOURCE);
   }
   else if (strcmp(cmdBody, setToAutoMode) == 0){
     sprintf(reply, "%s", "auto mode");
-    CONTROL_TYPE = AUTO;
+    changeStateTo(AUTO);
   }
   else if (strcmp(cmdBody, getState) == 0){
     int primLeft = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
@@ -83,19 +82,22 @@ void executeCommand(EthernetClient client){
     sprintf(reply, "%04d:%04d:%1d:%1d", primLeft, primRight, CONTROL_TYPE, CURRENT_SOURCE);
   }
   else if (strcmp(cmdBody, loudThreshold) == 0){
-    processDecimalParam(hasSetpoint, setpoint, reply, LOUD_TRESHOLD);
+    processDecimalParam(LOUD_TRESHOLD, EPR_loud_treshold, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, quietThreshold) == 0){
-    processDecimalParam(hasSetpoint, setpoint, reply, QUIET_TRESHOLD);
+    
   }
   else if (strcmp(cmdBody, loudTimeout) == 0){
-    processDecimalParam(hasSetpoint, setpoint, reply, LOUD_TRESHOLD);
+    
   }
   else if (strcmp(cmdBody, quietTimeout) == 0){
-    processDecimalParam(hasSetpoint, setpoint, reply, LOUD_TRESHOLD);
+    
   }
   else if (strcmp(cmdBody, ipAddr) == 0){
-
+    processOctetsString(ip, EPR_Ip, reply, hasSetpoint, setpoint);
+  }
+  else if (strcmp(cmdBody, port) == 0){
+    processDecimalParam(PORT, EPR_PORT, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, netMask) == 0){
    
@@ -127,10 +129,47 @@ void executeCommand(EthernetClient client){
   command[0] = '\0';
 }
 
-void processDecimalParam(bool hasSetpoint, char* setpoint, char* reply, int& value){
+void processDecimalParam(byte& value, byte eeprom_addr, char* reply, bool hasSetpoint, char* setpoint){
   if (hasSetpoint){
-      value = atoi(setpoint);
+    value = atoi(setpoint);
+    EEPROM.update(eeprom_addr, value);
+  }
+  sprintf(reply, "%d", value);
+}
+
+void processOctetsString(byte* octets, byte eeprom_addr, char* reply, bool hasSetpoint, char* setpoint){
+  if (hasSetpoint){
+    byte newOctets[4];
+    char *charOctet;
+    byte controlCounter = 0;
+
+    charOctet = strtok(setpoint, ".");
+    while (charOctet != NULL){
+      newOctets[controlCounter] = atoi(charOctet);
+      controlCounter++;
+      if (controlCounter > 3){
+        break;
+      }
+      charOctet = strtok(NULL, ".");
     }
-    sprintf(reply, "%d", value);
+
+    if (__DEBUG__){
+      Serial.println("Received octets: ");
+      Serial.println(newOctets[0]);
+      Serial.println(newOctets[1]);
+      Serial.println(newOctets[2]);
+      Serial.println(newOctets[3]);
+      Serial.print("Control counter value: ");
+      Serial.println(controlCounter);
+    }
+
+    if (controlCounter == 4){ // если пришли все октеты
+      for (int i = 0; i < 4; i++){
+        octets[i] = newOctets[i];
+      }
+      updateOctetsInEEPROM(octets, eeprom_addr);
+    }
+  }
+  sprintf(reply, "%d.%d.%d.%d", octets[0], octets[1], octets[2], octets[3]);
 }
 

@@ -4,7 +4,7 @@
  */
  
 void processWebClient(){
-  EthernetClient client = webServer.available();
+  EthernetClient client = webServer->available();
   if (client) {
     // an http request ends with a blank line
     boolean currentLineIsBlank = true;
