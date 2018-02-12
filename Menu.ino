@@ -103,7 +103,7 @@ void frame_0(){
  lcd.setCursor(1,0);
  // отправляем данные на иникатор уровня. выводим индикатор на дисплей
  levelmetr(chMAIN);
- Serial.println(ch0); // для отладки - смотрим уровень в ком порте
+ // Serial.println(ch0); // для отладки - смотрим уровень в ком порте
  lcd.setCursor(0,1);
  lcd.print("2");
  levelmetr(chRESERV);

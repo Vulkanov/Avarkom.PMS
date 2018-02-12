@@ -3,12 +3,14 @@
 // использовать одну из следующих библиотек 
 //в зависимости от версии сетевого шилда
 #include <Ethernet.h>
-// #include <Ethernet2.h> 
+//#include <Ethernet2.h> 
 
 #include <stdio.h>
 #include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+
+#define __DEBUG__ true  // для включения/выключения вывода в последовательный порт отладочной информации
 
 #define Pin4  4  //          Up
 #define Pin5  5  //          Dwn
@@ -50,7 +52,7 @@ const byte PRIMARY_SOURCE = 0;
 const byte SECONDARY_SOURCE = 1;
 const byte AUTO = 2;
 
-const byte MAX_COMMAND_LENGTH = 10;
+const byte MAX_COMMAND_LENGTH = 21;
 char command[MAX_COMMAND_LENGTH];
 byte commandIndex = 0;
 
@@ -123,6 +125,13 @@ EthernetServer commandServer(90); // ИСПРАВИТЬ!!!!
 LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 
 //=============FUNCTIONS====================
+// переключение состояний
+void changeStateTo(int state){
+    CONTROL_TYPE = state;
+    if (state != AUTO){
+      changeSourceTo(state);
+    }
+}
 
 // переключение источников звука
 void changeSourceTo(int source){
@@ -131,25 +140,22 @@ void changeSourceTo(int source){
   CURRENT_SOURCE = source;  
 }
 
-byte getValidOctetOrDefault(byte octetAddr, byte defaultOctetValue){
-  // для отладки - проблема с EEPROM!!
-  return defaultOctetValue;
-  
-  byte octet = EEPROM.read(octetAddr);
-  if (octet != 255 && octet != 0){  
-    return octet;
+bool octetsAreValid(byte oct1, byte oct2, byte oct3, byte oct4){
+  // устранение ошибок из-за незаписанного EEPROM
+  if (oct1 == oct2 && oct2 == oct3 && oct3 == oct4){ // если все октеты одинаковы
+    if (oct1 == 255 || oct1 == 0){ // если они все равны 0 или 255 
+      return false;
+    }
   }
-  else{  
-    return defaultOctetValue;
-  }
+  return true;
 }
 
 void initializeDeviceParameters(){
   // читаем октеты IP адреса
-  Ip1=getValidOctetOrDefault(EPR_Ip1, 10);  
-  Ip2=getValidOctetOrDefault(EPR_Ip2, 0);  
-  Ip3=getValidOctetOrDefault(EPR_Ip3, 0);   
-  Ip4=getValidOctetOrDefault(EPR_Ip4, 100); 
+  Ip1=10;  
+  Ip2=0;
+  Ip3=0;
+  Ip4=100;
 
   PORT=EEPROM.read(EPR_PORT);  // Порт
 
@@ -215,8 +221,14 @@ void setup() {
   
   changeSourceTo(PRIMARY_SOURCE);
 
-  // для отладки
-  Serial.begin(9600);
+  if (__DEBUG__){
+    Serial.begin(9600);
+    Serial.println("End of SETUP method.");
+    char ipInfo[32];
+    sprintf(ipInfo, "Avarkom IP is %d.%d.%d.%d", Ip1, Ip2, Ip3, Ip4);
+    Serial.println(ipInfo);
+    Serial.println("=========================");
+  }
 }
 
 
@@ -286,12 +298,6 @@ void loop() {
       }
       return;
   }
-}
-void changeStateTo(int state){
-    CONTROL_TYPE = state;
-    if (state != AUTO){
-      changeSourceTo(state);
-      }
 }
 
 
