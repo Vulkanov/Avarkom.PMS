@@ -2,9 +2,73 @@
  * В ЭТОМ ФАЙЛЕ НАХОДИТСЯ ВСЕ, ЧТО СВЯЗАНО С 
  * МЕНЮ НА LCD ДИСПЛЕЕ
  */
- 
-//драйвер кнопок
 
+#define Pin4  4  //          Up
+#define Pin5  5  //          Dwn
+#define Pin6  6  //         Left
+#define Pin7  7  //         Rght
+#define btnRIGHT  0// кнопка RIGHT
+#define btnUP     1// кнопка  UP
+#define btnDOWN   2// кнопка  DOWN
+#define btnLEFT   3// кнопка  LEFT
+#define btnNONE   5// кнопки  не нажаты
+
+byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
+byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
+byte bukva_D[8]   = {B01111,B00101,B00101,B01001,B10001,B11111,B10001,B00000,}; // Буква "Д"
+byte bukva_ZH[8]  = {B10101,B10101,B10101,B11111,B10101,B10101,B10101,B00000,}; // Буква "Ж"
+byte bukva_Z[8]   = {B01110,B10001,B00001,B00010,B00001,B10001,B01110,B00000,}; // Буква "З"
+byte bukva_I[8]   = {B10001,B10011,B10011,B10101,B11001,B11001,B10001,B00000,}; // Буква "И"
+byte bukva_IY[8]  = {B01110,B00000,B10001,B10011,B10101,B11001,B10001,B00000,}; // Буква "Й"
+byte bukva_L[8]   = {B00011,B00111,B00101,B00101,B01101,B01001,B11001,B00000,}; // Буква "Л"
+byte bukva_P[8]   = {B11111,B10001,B10001,B10001,B10001,B10001,B10001,B00000,}; // Буква "П"
+byte bukva_Y[8]   = {B10001,B10001,B10001,B01010,B00100,B01000,B10000,B00000,}; // Буква "У"
+byte bukva_F[8]   = {B00100,B11111,B10101,B10101,B11111,B00100,B00100,B00000,}; // Буква "Ф"
+byte bukva_TS[8]  = {B10010,B10010,B10010,B10010,B10010,B10010,B11111,B00001,}; // Буква "Ц"
+byte bukva_CH[8]  = {B10001,B10001,B10001,B01111,B00001,B00001,B00001,B00000,}; // Буква "Ч"
+byte bukva_Sh[8]  = {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00000,}; // Буква "Ш"
+byte bukva_Shch[8]= {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00001,}; // Буква "Щ"
+byte bukva_Mz[8]  = {B10000,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Ь"
+byte bukva_IYI[8] = {B10001,B10001,B10001,B11001,B10101,B10101,B11001,B00000,}; // Буква "Ы"
+byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
+byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
+
+// Переменные Меню
+byte D4 =4; //кнопка right
+byte D5 =5; //кнопка down
+byte D6 =6; //кнопка up
+byte D7 =7; //кнопка left
+long previousMillis = 0; //счетчик прошедшего времени для AutoMainScreen
+long interval = 30000; //задержка автовозврата к MainScreen 3сек
+unsigned long currentMillis; // текущее сохраненное значение времени
+byte key_N=5; //номер нажатой кнопки
+byte frame_N=0; // номер показ окна
+
+//индикатор уровня
+uint8_t symbol0[8] = {B00000,B10101,B10101,B10101,B10101,B10101,B00000,B00000,}; //Определяем массив который содержит полностью закрашенный символ
+uint8_t symbol1[8] = {B00000,B00000,B00000,B10101,B00000,B00000,B00000,B00000,};
+
+void initializeMenu(){
+  lcd.init();                     
+  lcd.backlight();// Включаем подсветку дисплея
+  lcd.createChar(0, symbol0);   
+  lcd.createChar(1, symbol1);  //  Загружаем символ из массива symbol0 в нулевую ячейку ОЗУ дисплея
+ 
+  
+  pinMode(D4, INPUT);
+  pinMode(D5, INPUT);
+  pinMode(D6, INPUT);
+  pinMode(D7, INPUT);
+
+  lcd.createChar(2, bukva_I);      // Создаем символ под номером 2
+  lcd.createChar(3, bukva_CH);
+  lcd.createChar(4, bukva_G);      // Создаем символ под номером 4
+  lcd.createChar(5, bukva_Y);
+  lcd.createChar(6, bukva_D); 
+  lcd.createChar(7, bukva_L);  
+}
+
+//драйвер кнопок
 int btn(){
   currentMillis = millis();
 if (digitalRead(D4) == HIGH) {
@@ -40,8 +104,8 @@ void keys(){       // выполнять процедуру раз в цикл
   {
     previousMillis = currentMillis;
     lcd.clear();
-    EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
-    EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
+    EEPROM.update(EPR_quiet_timeout, QUIET_TIMEOUT);
+    EEPROM.update(EPR_loud_timeout, LOUD_TIMEOUT);
     EEPROM.update(EPR_quiet_treshold, QUIET_TRESHOLD);
     EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
     EEPROM.update(EPR_PORT, PORT);
@@ -153,69 +217,69 @@ switch (key_N) {
 void frame_10(){ 
  lcd.setCursor(0,0);
  lcd.print(">HA PE3EPB ");
- lcd.print(SILENCE_TIMEOUT, DEC);
+ lcd.print(QUIET_TIMEOUT, DEC);
  lcd.setCursor(13, 0);
  lcd.print("CEK");
  lcd.setCursor(0, 1);
  lcd.print(" HA OCHOBH ");
- lcd.print(SOUND_TIMEOUT, DEC);
+ lcd.print(LOUD_TIMEOUT, DEC);
  lcd.setCursor(13,1);
  lcd.print("CEK");
    switch (key_N) {
     case 0:// right
       lcd.clear();
-      if (SILENCE_TIMEOUT < 20) SILENCE_TIMEOUT++; 
-      else SILENCE_TIMEOUT=1;
+      if (QUIET_TIMEOUT < 20) QUIET_TIMEOUT++; 
+      else QUIET_TIMEOUT=1;
       break;   
     case 1:
       lcd.clear();
-      EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
+      EEPROM.update(EPR_quiet_timeout, QUIET_TIMEOUT);
       frame_N=0; // up
       break;
     case 2:
       lcd.clear();
-      EEPROM.update(EPR_silence_timeout, SILENCE_TIMEOUT);
+      EEPROM.update(EPR_quiet_timeout, QUIET_TIMEOUT);
       frame_N=20; // down
       break;
     case 3:  // left
       lcd.clear();
-      if (SILENCE_TIMEOUT > 1) SILENCE_TIMEOUT--; 
-      else SILENCE_TIMEOUT=20;   
+      if (QUIET_TIMEOUT > 1) QUIET_TIMEOUT--; 
+      else QUIET_TIMEOUT=20;   
       break;
  } 
 };
-// --------------Окно 20 sound_timeout------------------
+// --------------Окно 20 LOUD_TIMEOUT------------------
 void frame_20(){ 
  lcd.setCursor(0,0);
  lcd.print(" HA PE3EPB ");
- lcd.print(SILENCE_TIMEOUT,DEC);
+ lcd.print(QUIET_TIMEOUT,DEC);
  lcd.setCursor(13,0);
  lcd.print("CEK");
  lcd.setCursor(0,1);
  lcd.print(">HA OCHOBH ");
- lcd.print(SOUND_TIMEOUT,DEC);
+ lcd.print(LOUD_TIMEOUT,DEC);
  lcd.setCursor(13,1);
  lcd.print("CEK");
    switch (key_N) {
     case 0:// right
       lcd.clear();
-      if (SOUND_TIMEOUT <= 19) SOUND_TIMEOUT++; 
-      else SOUND_TIMEOUT = 1;
+      if (LOUD_TIMEOUT <= 19) LOUD_TIMEOUT++; 
+      else LOUD_TIMEOUT = 1;
       break;   
     case 1:// up
       lcd.clear();
-      EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
+      EEPROM.update(EPR_loud_timeout, LOUD_TIMEOUT);
       frame_N=10; 
       break;
     case 2: // down
       lcd.clear();
-      EEPROM.update(EPR_sound_timeout, SOUND_TIMEOUT);
+      EEPROM.update(EPR_loud_timeout, LOUD_TIMEOUT);
       frame_N=30;
       break;
     case 3: // left
       lcd.clear(); 
-      if (SOUND_TIMEOUT > 2) SOUND_TIMEOUT-- ;
-      else SOUND_TIMEOUT = 20;
+      if (LOUD_TIMEOUT > 2) LOUD_TIMEOUT-- ;
+      else LOUD_TIMEOUT = 20;
       break;
  } 
 };

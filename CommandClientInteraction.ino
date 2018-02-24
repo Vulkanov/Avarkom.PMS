@@ -4,6 +4,10 @@
  * ИНТЕРФЕЙСОМ ЧЕРЕЗ ETHERNET
  */
 
+const byte MAX_COMMAND_LENGTH = 21;
+char command[MAX_COMMAND_LENGTH];
+byte commandIndex = 0;
+
 bool receiveCommand(EthernetClient client){
   if (commandIndex >= MAX_COMMAND_LENGTH - 1){
     return true;
@@ -59,7 +63,8 @@ void executeCommand(EthernetClient client){
   char ipAddr[] = "ADDR"; // установить/получить IP устройства
   char port[] = "PORT"; // установить/получить порт для соединения с интерфейсом (приложением)
   char netMask[] = "MASK"; // установить/получить маску подсети устройства
-  char gateway[] = "GATE"; // установить/получить шлюз устройства
+  char gateWay[] = "GATE"; // установить/получить шлюз устройства
+  char relay[] = "RLAY"; // управление выходом реле
 
   if (strcmp(cmdBody, setToPrimary) == 0){
     sprintf(reply, "%s", "prim mode");
@@ -85,13 +90,13 @@ void executeCommand(EthernetClient client){
     processDecimalParam(LOUD_TRESHOLD, EPR_loud_treshold, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, quietThreshold) == 0){
-    
+    processDecimalParam(QUIET_TRESHOLD, EPR_quiet_treshold, reply, hasSetpoint, setpoint);  
   }
   else if (strcmp(cmdBody, loudTimeout) == 0){
-    
+    processDecimalParam(LOUD_TIMEOUT, EPR_loud_timeout, reply, hasSetpoint, setpoint);  
   }
   else if (strcmp(cmdBody, quietTimeout) == 0){
-    
+    processDecimalParam(QUIET_TIMEOUT, EPR_quiet_timeout, reply, hasSetpoint, setpoint);  
   }
   else if (strcmp(cmdBody, ipAddr) == 0){
     processOctetsString(ip, EPR_Ip, reply, hasSetpoint, setpoint);
@@ -100,10 +105,16 @@ void executeCommand(EthernetClient client){
     processDecimalParam(PORT, EPR_PORT, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, netMask) == 0){
-   
+    processOctetsString(netmask, EPR_Mask, reply, hasSetpoint, setpoint);
   }
-  else if (strcmp(cmdBody, gateway) == 0){
-  
+  else if (strcmp(cmdBody, gateWay) == 0){
+    processOctetsString(gateway, EPR_Gate, reply, hasSetpoint, setpoint);
+  }
+  else if (strcmp(cmdBody, relay) == 0){
+    if (hasSetpoint){
+      digitalWrite(RELAY, atoi(setpoint));
+    }
+    sprintf(reply, "%d", digitalRead(RELAY));
   }
   else {
     sprintf(reply, "%s", "unknown command");

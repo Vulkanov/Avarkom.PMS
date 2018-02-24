@@ -2,6 +2,9 @@
  * В ЭТОМ ФАЙЛЕ НАХОДИТСЯ ВСЕ, ЧТО СВЯЗАНО С ОБРАБОТКОЙ
  * И АНАЛИЗОМ ЗВУКОВЫХ СИГНАЛОВ
  */
+ 
+const byte SAMPLING_DELAY = 0; // микросекунд
+const long NUM_OF_SAMPLES = 64;
 
 //считывание и усреднение сигнала
 long processAnalogValue(int channel){
