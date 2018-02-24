@@ -62,8 +62,8 @@ void executeCommand(EthernetClient client){
   char quietTimeout[] = "QTIM"; // установить/получить величину задержки перед переключением в режим "тишина в канале"
   char ipAddr[] = "ADDR"; // установить/получить IP устройства
   char port[] = "PORT"; // установить/получить порт для соединения с интерфейсом (приложением)
-  char netMask[] = "MASK"; // установить/получить маску подсети устройства
-  char gateWay[] = "GATE"; // установить/получить шлюз устройства
+  char mask[] = "MASK"; // установить/получить маску подсети устройства
+  char gate[] = "GATE"; // установить/получить шлюз устройства
   char relay[] = "RLAY"; // управление выходом реле
 
   if (strcmp(cmdBody, setToPrimary) == 0){
@@ -104,10 +104,10 @@ void executeCommand(EthernetClient client){
   else if (strcmp(cmdBody, port) == 0){
     processDecimalParam(PORT, EPR_PORT, reply, hasSetpoint, setpoint);
   }
-  else if (strcmp(cmdBody, netMask) == 0){
+  else if (strcmp(cmdBody, mask) == 0){
     processOctetsString(netmask, EPR_Mask, reply, hasSetpoint, setpoint);
   }
-  else if (strcmp(cmdBody, gateWay) == 0){
+  else if (strcmp(cmdBody, gate) == 0){
     processOctetsString(gateway, EPR_Gate, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, relay) == 0){
