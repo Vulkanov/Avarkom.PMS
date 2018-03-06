@@ -19,7 +19,7 @@ const byte SECONDARY_SOURCE = 1;
 const byte AUTO = 2;
 
 // адреса сохраненных в EEPROM значений
-byte EPR_USE_DHCP = 20;
+byte EPR_USE_DHCP = 40;
 byte EPR_PORT = 30;
 byte EPR_Ip = 10; // ВНИМАНИЕ! IP занимает этот адрес и три следующих!
 byte EPR_Mask = 14; // ВНИМАНИЕ! маска подсети занимает этот адрес и три следующих!
