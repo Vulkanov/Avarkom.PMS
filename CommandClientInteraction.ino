@@ -60,6 +60,7 @@ void executeCommand(EthernetClient client){
   char quietThreshold[] = "QTHR"; // установить/получить уровень, считающийся тишиной
   char loudTimeout[] = "LTIM"; // установить/получить величину задержки перед переключением в режим "звук присутствует"
   char quietTimeout[] = "QTIM"; // установить/получить величину задержки перед переключением в режим "тишина в канале"
+  char useDhcp[] = "DHCP"; // установить/получить значение флага получения устройством адреса по DHCP
   char ipAddr[] = "ADDR"; // установить/получить IP устройства
   char port[] = "PORT"; // установить/получить порт для соединения с интерфейсом (приложением)
   char mask[] = "MASK"; // установить/получить маску подсети устройства
@@ -83,8 +84,16 @@ void executeCommand(EthernetClient client){
     int primRight = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
     int scndLeft = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
     int scndRight = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
-    
-    sprintf(reply, "%04d:%04d:%1d:%1d", primLeft, primRight, CONTROL_TYPE, CURRENT_SOURCE);
+
+    // ответ выглядит следующим образом:
+    //
+    // левыйПервый:правыйПервый:левыйВторой:правыйВторой:текущийИсточник:состояниеРеле
+    //
+    // где первые 4 числа - уровень сигнала на левом и правом канале первого и второго источника,
+    // далее идет текущий источник (один из PRIMARY_SOURCE, SECONDARY_SOURCE, AUTO)
+    // и состояние реле. Разделитель - двоеточие.
+    sprintf(reply, "%04d:%04d:%04d:%04d:%1d:%1d", 
+            primLeft, primRight, scndLeft, scndRight, CONTROL_TYPE, digitalRead(RELAY));
   }
   else if (strcmp(cmdBody, loudThreshold) == 0){
     processDecimalParam(LOUD_TRESHOLD, EPR_loud_treshold, reply, hasSetpoint, setpoint);
@@ -97,6 +106,9 @@ void executeCommand(EthernetClient client){
   }
   else if (strcmp(cmdBody, quietTimeout) == 0){
     processDecimalParam(QUIET_TIMEOUT, EPR_quiet_timeout, reply, hasSetpoint, setpoint);  
+  }
+  else if (strcmp(cmdBody, useDhcp) == 0){
+    processDecimalParam(USE_DHCP, EPR_USE_DHCP, reply, hasSetpoint, setpoint);
   }
   else if (strcmp(cmdBody, ipAddr) == 0){
     processOctetsString(ip, EPR_Ip, reply, hasSetpoint, setpoint);

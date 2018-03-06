@@ -19,6 +19,7 @@ const byte SECONDARY_SOURCE = 1;
 const byte AUTO = 2;
 
 // адреса сохраненных в EEPROM значений
+byte EPR_USE_DHCP = 20;
 byte EPR_PORT = 30;
 byte EPR_Ip = 10; // ВНИМАНИЕ! IP занимает этот адрес и три следующих!
 byte EPR_Mask = 14; // ВНИМАНИЕ! маска подсети занимает этот адрес и три следующих!
@@ -57,6 +58,7 @@ const byte AUTO_STATE_INDICATOR = 8; // диод, загорающийся, ес
 byte CURRENT_SOURCE;
 
 // параметры сети
+byte USE_DHCP;
 byte PORT;  // Порт для работы с приложением (интерфейсом)
 byte ip[4];
 byte netmask[4];
@@ -124,8 +126,10 @@ void initializeDeviceParameters(){
   getOctetsFromEEPROM(ip, EPR_Ip);
   // читаем маску подсети
   getOctetsFromEEPROM(netmask, EPR_Mask);
+  getOctetsFromEEPROM(gateway, EPR_Gate);
   // читаем порт
   PORT=EEPROM.read(EPR_PORT); 
+  USE_DHCP = EEPROM.read(EPR_USE_DHCP);
 
   byte deviceMac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
   IPAddress deviceIp(ip[0], ip[1], ip[2], ip[3]);
@@ -166,7 +170,8 @@ void setup() {
     Serial.begin(9600);
     Serial.println("End of SETUP method.");
     char ipInfo[32];
-    sprintf(ipInfo, "Avarkom IP is %d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], PORT);
+    sprintf(ipInfo, "Avarkom IP is %d.%d.%d.%d:%d dhcp: %d", 
+            ip[0], ip[1], ip[2], ip[3], PORT, bool(USE_DHCP));
     Serial.println(ipInfo);
     Serial.println("=========================");
   }
