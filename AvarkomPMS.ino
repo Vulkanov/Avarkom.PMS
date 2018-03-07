@@ -14,7 +14,7 @@
 
 // текущий источник
 byte CONTROL_TYPE;
-const byte PRIMARY_SOURCE = 0;
+const byte PRIMARY_SOURCE = 0; // реализовать перечислением
 const byte SECONDARY_SOURCE = 1;
 const byte AUTO = 2;
 
