@@ -151,7 +151,6 @@ void initializeDeviceParameters(){
 void setup() {
   initializeDeviceParameters();
   analogReference(DEFAULT);
-  delay(1000); // зачем?
   initializeMenu();
 
   pinMode(RELAY, OUTPUT);

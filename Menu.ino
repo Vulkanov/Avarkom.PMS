@@ -13,25 +13,25 @@
 #define btnLEFT   3// кнопка  LEFT
 #define btnNONE   5// кнопки  не нажаты
 
-byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
-byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
+//byte bukva_B[8]   = {B11110,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Б"
+//byte bukva_G[8]   = {B11111,B10001,B10000,B10000,B10000,B10000,B10000,B00000,}; // Буква "Г"
 byte bukva_D[8]   = {B01111,B00101,B00101,B01001,B10001,B11111,B10001,B00000,}; // Буква "Д"
 byte bukva_ZH[8]  = {B10101,B10101,B10101,B11111,B10101,B10101,B10101,B00000,}; // Буква "Ж"
-byte bukva_Z[8]   = {B01110,B10001,B00001,B00010,B00001,B10001,B01110,B00000,}; // Буква "З"
-byte bukva_I[8]   = {B10001,B10011,B10011,B10101,B11001,B11001,B10001,B00000,}; // Буква "И"
-byte bukva_IY[8]  = {B01110,B00000,B10001,B10011,B10101,B11001,B10001,B00000,}; // Буква "Й"
+//byte bukva_Z[8]   = {B01110,B10001,B00001,B00010,B00001,B10001,B01110,B00000,}; // Буква "З"
+//byte bukva_I[8]   = {B10001,B10011,B10011,B10101,B11001,B11001,B10001,B00000,}; // Буква "И"
+//byte bukva_IY[8]  = {B01110,B00000,B10001,B10011,B10101,B11001,B10001,B00000,}; // Буква "Й"
 byte bukva_L[8]   = {B00011,B00111,B00101,B00101,B01101,B01001,B11001,B00000,}; // Буква "Л"
-byte bukva_P[8]   = {B11111,B10001,B10001,B10001,B10001,B10001,B10001,B00000,}; // Буква "П"
+//byte bukva_P[8]   = {B11111,B10001,B10001,B10001,B10001,B10001,B10001,B00000,}; // Буква "П"
 byte bukva_Y[8]   = {B10001,B10001,B10001,B01010,B00100,B01000,B10000,B00000,}; // Буква "У"
-byte bukva_F[8]   = {B00100,B11111,B10101,B10101,B11111,B00100,B00100,B00000,}; // Буква "Ф"
-byte bukva_TS[8]  = {B10010,B10010,B10010,B10010,B10010,B10010,B11111,B00001,}; // Буква "Ц"
+//byte bukva_F[8]   = {B00100,B11111,B10101,B10101,B11111,B00100,B00100,B00000,}; // Буква "Ф"
+//byte bukva_TS[8]  = {B10010,B10010,B10010,B10010,B10010,B10010,B11111,B00001,}; // Буква "Ц"
 byte bukva_CH[8]  = {B10001,B10001,B10001,B01111,B00001,B00001,B00001,B00000,}; // Буква "Ч"
-byte bukva_Sh[8]  = {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00000,}; // Буква "Ш"
-byte bukva_Shch[8]= {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00001,}; // Буква "Щ"
-byte bukva_Mz[8]  = {B10000,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Ь"
+//byte bukva_Sh[8]  = {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00000,}; // Буква "Ш"
+//byte bukva_Shch[8]= {B10101,B10101,B10101,B10101,B10101,B10101,B11111,B00001,}; // Буква "Щ"
+//byte bukva_Mz[8]  = {B10000,B10000,B10000,B11110,B10001,B10001,B11110,B00000,}; // Буква "Ь"
 byte bukva_IYI[8] = {B10001,B10001,B10001,B11001,B10101,B10101,B11001,B00000,}; // Буква "Ы"
-byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
-byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
+//byte bukva_Yu[8]  = {B10010,B10101,B10101,B11101,B10101,B10101,B10010,B00000,}; // Буква "Ю"
+//byte bukva_Ya[8]  = {B01111,B10001,B10001,B01111,B00101,B01001,B10001,B00000,}; // Буква "Я"
 
 // Переменные Меню
 byte D4 =4; //кнопка right
@@ -39,7 +39,7 @@ byte D5 =5; //кнопка down
 byte D6 =6; //кнопка up
 byte D7 =7; //кнопка left
 long previousMillis = 0; //счетчик прошедшего времени для AutoMainScreen
-long interval = 30000; //задержка автовозврата к MainScreen 3сек
+int interval = 60000; //задержка автовозврата к MainScreen 3сек
 unsigned long currentMillis; // текущее сохраненное значение времени
 byte key_N=5; //номер нажатой кнопки
 byte frame_N=0; // номер показ окна
@@ -60,10 +60,10 @@ void initializeMenu(){
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
 
-  lcd.createChar(2, bukva_I);      // Создаем символ под номером 2
+  lcd.createChar(2, bukva_Y);      // Создаем символ под номером 2
   lcd.createChar(3, bukva_CH);
-  lcd.createChar(4, bukva_G);      // Создаем символ под номером 4
-  lcd.createChar(5, bukva_Y);
+//  lcd.createChar(4, bukva_G);      // Создаем символ под номером 4
+  lcd.createChar(5, bukva_IYI);
   lcd.createChar(6, bukva_D); 
   lcd.createChar(7, bukva_L);  
 }
@@ -109,6 +109,7 @@ void keys(){       // выполнять процедуру раз в цикл
     EEPROM.update(EPR_quiet_treshold, QUIET_TRESHOLD);
     EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
     EEPROM.update(EPR_PORT, PORT);
+    EEPROM.update(EPR_USE_DHCP, USE_DHCP);
     updateOctetsInEEPROM(ip, EPR_Ip);
     updateOctetsInEEPROM(netmask, EPR_Mask);
     /*
@@ -127,6 +128,10 @@ void keys(){       // выполнять процедуру раз в цикл
   switch (frame_N) {
     case 0:frame_0();
       break;
+    case 1:frame_1();
+      break;
+    case 2:frame_2();
+      break;
     case 10:frame_10();
       break;
     case 20:frame_20();
@@ -136,6 +141,8 @@ void keys(){       // выполнять процедуру раз в цикл
     case 40:frame_40();
       break;
     case 50:frame_50();
+      break;
+    case 55:frame_55();
       break;
     case 60:frame_60();
       break;
@@ -159,10 +166,10 @@ void keys(){       // выполнять процедуру раз в цикл
 // --------------Окно №0------------------
 void frame_0(){ 
  // считываем входные значения уровней звука для индикаторов уровня
- long ch0 = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
- long ch1 = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
- long ch2 = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
- long ch3 = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
+ int ch0 = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
+ int ch1 = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
+ int ch2 = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
+ int ch3 = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
  // усредняем данные для отображения правый + левый канал
  int chMAIN = (ch0 + ch1) / 2;
  int chRESERV = (ch2 + ch3) / 2;
@@ -177,7 +184,7 @@ void frame_0(){
  levelmetr(chRESERV);
  lcd.setCursor(12,0);
  if ((CONTROL_TYPE == 0) || (CONTROL_TYPE == 1)) {
-  lcd.print("P\5\3H");
+  lcd.print("P\2\3H");
   lcd.setCursor(12,1);
   lcd.print("KAH");
  lcd.print(CURRENT_SOURCE+1);  
@@ -202,13 +209,83 @@ switch (key_N) {
       break;
     case 2:
       lcd.clear();
-      frame_N=10;  // down
+      frame_N=1;  // down
       break;
     case 3:
       lcd.clear();// left
         if (CONTROL_TYPE >= 1) CONTROL_TYPE--;
         else (CONTROL_TYPE=2);
         changeStateTo(CONTROL_TYPE);
+      break;
+ } 
+};
+
+// --------------Окно №1 индикатор уровня канал 1 (левый/Правый)------------------
+void frame_1(){ 
+ // считываем входные значения уровней звука для индикаторов уровня
+ int ch0 = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
+ int ch1 = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
+ lcd.setCursor(0,0);
+ lcd.print("L");
+ lcd.setCursor(1,0);
+ // отправляем данные на иникатор уровня. выводим индикатор на дисплей
+ levelmetr(ch0);
+ // Serial.println(ch0); // для отладки - смотрим уровень в ком порте
+ lcd.setCursor(0,1);
+ lcd.print("R");
+ levelmetr(ch1);
+ lcd.setCursor(12,0);
+  lcd.print("\2POB");
+  lcd.setCursor(12,1);
+  lcd.print("KAH1");
+ 
+switch (key_N) {
+    case 0:// right
+      break;   
+    case 1:
+      lcd.clear();
+      frame_N=0;   // up
+      break;
+    case 2:
+      lcd.clear();
+      frame_N=2;  // down
+      break;
+    case 3:// left
+      break;
+ } 
+};
+
+// --------------Окно №2 индикатор уровня канал 2 (левый/Правый)------------------
+void frame_2(){ 
+ // считываем входные значения уровней звука для индикаторов уровня
+ int ch2 = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
+ int ch3 = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
+ lcd.setCursor(0,0);
+ lcd.print("L");
+ lcd.setCursor(1,0);
+ // отправляем данные на иникатор уровня. выводим индикатор на дисплей
+ levelmetr(ch2);
+ // Serial.println(ch0); // для отладки - смотрим уровень в ком порте
+ lcd.setCursor(0,1);
+ lcd.print("R");
+ levelmetr(ch3);
+ lcd.setCursor(12,0);
+  lcd.print("\2POB");
+  lcd.setCursor(12,1);
+  lcd.print("KAH2");
+ 
+switch (key_N) {
+    case 0:// right
+      break;   
+    case 1:
+      lcd.clear();
+      frame_N=1;   // up
+      break;
+    case 2:
+      lcd.clear();
+      frame_N=10;  // down
+      break;
+    case 3:// left
       break;
  } 
 };
@@ -234,7 +311,7 @@ void frame_10(){
     case 1:
       lcd.clear();
       EEPROM.update(EPR_quiet_timeout, QUIET_TIMEOUT);
-      frame_N=0; // up
+      frame_N=2; // up
       break;
     case 2:
       lcd.clear();
@@ -375,9 +452,52 @@ void frame_50(){
       break;
     case 2:
       EEPROM.update(EPR_PORT, PORT);
-      frame_N=60; // down
+      frame_N=55; // down
       break;
     case 3: PORT-- ; // left
+      break;
+ } 
+};
+
+// --------------Окно 55 DHCP------------------
+void frame_55(){ 
+ lcd.setCursor(0,0);
+ lcd.print("DHCP :          ");
+ lcd.setCursor(0,1);
+ lcd.print(">");
+ if (USE_DHCP > 0) lcd.print("BK\7");
+ else lcd.print("B\5K\7");
+  lcd.print("            ");
+  switch (key_N) {
+    case 0: // right
+    if (USE_DHCP < 1) USE_DHCP++; 
+    else USE_DHCP = 0; 
+      break;   
+    case 1: // up
+      lcd.clear();
+      EEPROM.update(EPR_USE_DHCP, USE_DHCP);
+      /*
+      EEPROM.update(EPR_Ip1, Ip1);
+      EEPROM.update(EPR_Ip2, Ip2);
+      EEPROM.update(EPR_Ip3, Ip3);
+      EEPROM.update(EPR_Ip4, Ip4);
+      */
+      frame_N=50;
+      break;
+    case 2:// down
+      lcd.clear();
+      EEPROM.update(EPR_USE_DHCP, USE_DHCP);
+      /*
+      EEPROM.update(EPR_Ip1, Ip1);
+      EEPROM.update(EPR_Ip2, Ip2);
+      EEPROM.update(EPR_Ip3, Ip3);
+      EEPROM.update(EPR_Ip4, Ip4);
+      */
+      frame_N=60;
+      break;
+    case 3: // left
+    if (USE_DHCP > 0) USE_DHCP--; 
+    else USE_DHCP = 1; 
       break;
  } 
 };
@@ -408,7 +528,7 @@ void frame_60(){
       EEPROM.update(EPR_Ip3, Ip3);
       EEPROM.update(EPR_Ip4, Ip4);
       */
-      frame_N=50;
+      frame_N=55;
       break;
     case 2:// down
       lcd.clear();
