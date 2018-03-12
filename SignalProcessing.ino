@@ -4,7 +4,7 @@
  */
  
 const byte SAMPLING_DELAY = 0; // микросекунд
-const long NUM_OF_SAMPLES = 64;
+const long NUM_OF_SAMPLES = 32;
 
 //считывание и усреднение сигнала
 long processAnalogValue(int channel){
@@ -15,9 +15,9 @@ long processAnalogValue(int channel){
     sygnal += analogRead(channel);
     delayMicroseconds(SAMPLING_DELAY);
   }
-  sygnal = sygnal / NUM_OF_SAMPLES - 554;
-  if (sygnal < 0) sygnal = -sygnal;
-  sygnal = map(sygnal,0,511,0,1023);
+  sygnal = sygnal / NUM_OF_SAMPLES;
+  //if (sygnal < 0) sygnal = -sygnal;
+  //sygnal = map(sygnal,0,511,0,1023);
   return sygnal ; 
 }
 
