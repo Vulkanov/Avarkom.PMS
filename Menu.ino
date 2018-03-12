@@ -39,7 +39,7 @@ byte D5 =5; //кнопка down
 byte D6 =6; //кнопка up
 byte D7 =7; //кнопка left
 long previousMillis = 0; //счетчик прошедшего времени для AutoMainScreen
-int interval = 60000; //задержка автовозврата к MainScreen 3сек
+long interval = 60000; //задержка автовозврата к MainScreen 3сек
 unsigned long currentMillis; // текущее сохраненное значение времени
 byte key_N=5; //номер нажатой кнопки
 byte frame_N=0; // номер показ окна
