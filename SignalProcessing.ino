@@ -35,14 +35,4 @@ bool sourceIsLoud(int ch1, int ch2){
   return (ch1 >= round(LOUD_TRESHOLD * coeff)) && (ch2 >= round(LOUD_TRESHOLD * coeff));
 }
 
-void levelmetr(int valSensor){
-  if (valSensor < 20) {
-    lcd.print("\1HET\1"); lcd.print("3B\2KA");
-  }
-  else {
-    uint8_t j=map(valSensor,0,1023,0,10); //  Определяем переменную j которой присваиваем значение valSensor преобразованное от диапазона 0...1023 к диапазону 0...17
-    for(uint8_t i=0; i<10; i++){    //  Выполняем цикл 16 раз для вывода шкалы из 16 символов начиная с позиции в которую ранее был установлен курсор
-      lcd.write(j>i ? 0:1);        //  Выводим на дисплей символ по его коду, либо 1 (символ из 1 ячейки ОЗУ дисплея), либо 32 (символ пробела)   
-      }
-   }                       
-}
+

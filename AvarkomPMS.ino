@@ -2,8 +2,8 @@
 
 // использовать одну из следующих библиотек 
 //в зависимости от версии сетевого шилда
-#include <Ethernet.h>
-//#include <Ethernet2.h> 
+//#include <Ethernet.h>
+#include <Ethernet2.h> 
 
 #include <stdio.h>
 #include <EEPROM.h>
@@ -53,8 +53,8 @@ const byte SECONDARY_SOURCE_RIGHT_INPUT = A3;
 // выходы устройства
 const byte SOURCE_OUTPUT_1 = 2;
 const byte SOURCE_OUTPUT_2 = 3;
-const byte RELAY = 7;  // управление внешним реле
-const byte AUTO_STATE_INDICATOR = 8; // диод, загорающийся, если устройство работает в автоматическом режиме
+const byte RELAY = 8;  // управление внешним реле
+const byte AUTO_STATE_INDICATOR = 9; // диод, загорающийся, если устройство работает в автоматическом режиме
 byte CURRENT_SOURCE;
 
 // параметры сети
@@ -73,6 +73,7 @@ LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 // переключение состояний
 void changeStateTo(int state){
   CONTROL_TYPE = state;
+  SOURCE_STATE = SOUND_DISAPPEARED;
   if (state != AUTO){
     changeSourceTo(state);
   }
@@ -133,6 +134,8 @@ void initializeDeviceParameters(){
 
   byte deviceMac[] = { 0x90, 0xA2, 0xDA, 0x0E, 0xD0, 0x99 };
   IPAddress deviceIp(ip[0], ip[1], ip[2], ip[3]);
+  //if (USE_DHCP > 0) Ethernet.begin(deviceMac);
+  //else Ethernet.begin(deviceMac, deviceIp);
   Ethernet.begin(deviceMac, deviceIp);
 
   commandServer = new EthernetServer(PORT);
@@ -178,7 +181,7 @@ void setup() {
 
  
 void loop() {
-  // сигнализируем, если в автоматическом режиме
+  // сигнализируем, ОБ АВАРИИ (если в автоматическом режиме и источник 2)
   if (CONTROL_TYPE == AUTO){
     digitalWrite(AUTO_STATE_INDICATOR, HIGH);
   }
