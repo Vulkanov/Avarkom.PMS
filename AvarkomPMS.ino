@@ -10,25 +10,25 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define __DEBUG__ true  // для включения/выключения вывода в последовательный порт отладочной информации
+#define __DEBUG__ false  // для включения/выключения вывода в последовательный порт отладочной информации
 
 // текущий источник
 byte CONTROL_TYPE;
-const byte PRIMARY_SOURCE = 0; // реализовать перечислением
-const byte SECONDARY_SOURCE = 1;
-const byte AUTO = 2;
+#define PRIMARY_SOURCE 0 // реализовать перечислением
+#define SECONDARY_SOURCE 1
+#define AUTO 2
 
 // адреса сохраненных в EEPROM значений
-byte EPR_USE_DHCP = 40;
-byte EPR_PORT = 30;
-byte EPR_Ip = 10; // ВНИМАНИЕ! IP занимает этот адрес и три следующих!
-byte EPR_Mask = 14; // ВНИМАНИЕ! маска подсети занимает этот адрес и три следующих!
-byte EPR_Gate = 18; // ВНИМАНИЕ! шлюз занимает этот адрес и три следующих!
+#define EPR_USE_DHCP 40
+#define EPR_PORT 30
+#define EPR_Ip 10 // ВНИМАНИЕ! IP занимает этот адрес и три следующих!
+#define EPR_Mask 14 // ВНИМАНИЕ! маска подсети занимает этот адрес и три следующих!
+#define EPR_Gate 18 // ВНИМАНИЕ! шлюз занимает этот адрес и три следующих!
 
-byte EPR_quiet_treshold = 50;
-byte EPR_loud_treshold = 51;
-byte EPR_quiet_timeout = 52;
-byte EPR_loud_timeout = 53;
+#define EPR_quiet_treshold 50
+#define EPR_loud_treshold 51
+#define EPR_quiet_timeout 52
+#define EPR_loud_timeout 53
 
 // логика переключения источников
 long timeMark;
@@ -39,22 +39,22 @@ byte QUIET_TRESHOLD;
 byte LOUD_TRESHOLD;
 
 byte SOURCE_STATE;
-const byte SOUND = 0;
-const byte SILENCE = 1;
-const byte SOUND_DISAPPEARED = 2;
-const byte SOUND_APPEARED = 3;
+#define SOUND  0
+#define SILENCE  1
+#define SOUND_DISAPPEARED  2
+#define SOUND_APPEARED  3
 
 // входы устройства
-const byte PRIMARY_SOURCE_LEFT_INPUT = A0; 
-const byte PRIMARY_SOURCE_RIGHT_INPUT = A1; 
-const byte SECONDARY_SOURCE_LEFT_INPUT = A2; 
-const byte SECONDARY_SOURCE_RIGHT_INPUT = A3; 
+#define PRIMARY_SOURCE_LEFT_INPUT  A0
+#define PRIMARY_SOURCE_RIGHT_INPUT  A1 
+#define SECONDARY_SOURCE_LEFT_INPUT  A2 
+#define SECONDARY_SOURCE_RIGHT_INPUT  A3
 
 // выходы устройства
-const byte SOURCE_OUTPUT_1 = 2;
-const byte SOURCE_OUTPUT_2 = 3;
-const byte RELAY = 8;  // управление внешним реле
-const byte AUTO_STATE_INDICATOR = 9; // диод, загорающийся, если устройство работает в автоматическом режиме
+#define SOURCE_OUTPUT_1  2
+#define SOURCE_OUTPUT_2  3
+#define RELAY  8  // управление внешним реле
+#define AUTO_STATE_INDICATOR  9 // диод, загорающийся, если устройство работает в автоматическом режиме
 byte CURRENT_SOURCE;
 
 // параметры сети
