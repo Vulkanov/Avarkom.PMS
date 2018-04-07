@@ -2,15 +2,15 @@
 
 // использовать одну из следующих библиотек 
 //в зависимости от версии сетевого шилда
-//#include <Ethernet.h>
-#include <Ethernet2.h> 
+#include <Ethernet.h>
+//#include <Ethernet2.h> 
 
 #include <stdio.h>
 #include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define __DEBUG__ false  // для включения/выключения вывода в последовательный порт отладочной информации
+#define __DEBUG__ true  // для включения/выключения вывода в последовательный порт отладочной информации
 
 // текущий источник
 byte CONTROL_TYPE;
@@ -43,6 +43,7 @@ byte SOURCE_STATE;
 #define SILENCE  1
 #define SOUND_DISAPPEARED  2
 #define SOUND_APPEARED  3
+#define INITIAL_STATE 4
 
 // входы устройства
 #define PRIMARY_SOURCE_LEFT_INPUT  A0
@@ -72,8 +73,13 @@ LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 //==========================================================FUNCTIONS==========================================================
 // переключение состояний
 void changeStateTo(int state){
+  if (CONTROL_TYPE != AUTO && state == AUTO){ // если переходим в автоматический режим из ручного
+    CONTROL_TYPE = AUTO;
+    SOURCE_STATE = INITIAL_STATE;
+    return;
+  }
+  
   CONTROL_TYPE = state;
-  SOURCE_STATE = SOUND_DISAPPEARED;
   if (state != AUTO){
     changeSourceTo(state);
   }
@@ -95,7 +101,7 @@ void getOctetsFromEEPROM(byte* octets, byte addr){
 }
 
 
-void updateOctetsInEEPROM(byte* octets, byte addr){
+void updateOctetsInEEPROM(byte addr, byte* octets){
   for (int i=0; i<4; i++){
     EEPROM.update(addr + i, octets[i]);
   }
@@ -165,7 +171,7 @@ void setup() {
   pinMode(SOURCE_OUTPUT_1, OUTPUT);
   pinMode(SOURCE_OUTPUT_2, OUTPUT);
 
-  SOURCE_STATE = SOUND;
+  SOURCE_STATE = INITIAL_STATE;
   changeStateTo(AUTO);
 
   if (__DEBUG__){
@@ -192,8 +198,11 @@ void loop() {
   keys(); // ввод
   
   EthernetClient commandClient = commandServer->available();
+  const byte REPLY_SIZE = 14;
+  char reply[REPLY_SIZE];
   if (receiveCommand(commandClient)){
-    executeCommand(commandClient);
+    executeCommand(commandClient, reply);
+    sendReply(commandClient, reply, REPLY_SIZE);
   }
   
   processWebClient();
@@ -205,11 +214,21 @@ void loop() {
   int primLeft = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
   int primRight = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
 
-  //primRight = primLeft; //FOR DEBUG!!!!!
   bool soundIsAbsent = sourceIsQuiet(primLeft, primRight);
   bool soundIsPresent = sourceIsLoud(primLeft, primRight);
   
   switch (SOURCE_STATE){
+    case INITIAL_STATE:
+      if (soundIsPresent){
+        changeSourceTo(PRIMARY_SOURCE);
+        SOURCE_STATE = SOUND;
+      }
+      else{
+        changeSourceTo(SECONDARY_SOURCE);
+        SOURCE_STATE = SILENCE;
+      }
+      break;
+      
     case SOUND:
       if (soundIsAbsent){  
          SOURCE_STATE = SOUND_DISAPPEARED;

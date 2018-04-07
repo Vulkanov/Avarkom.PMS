@@ -121,8 +121,8 @@ void keys(){       // выполнять процедуру раз в цикл
     EEPROM.update(EPR_loud_treshold, LOUD_TRESHOLD);
     EEPROM.update(EPR_PORT, PORT);
     EEPROM.update(EPR_USE_DHCP, USE_DHCP);
-    updateOctetsInEEPROM(ip, EPR_Ip);
-    updateOctetsInEEPROM(netmask, EPR_Mask);
+    updateOctetsInEEPROM(EPR_Ip, ip);
+    updateOctetsInEEPROM(EPR_Mask, netmask);
     /*
     EEPROM.update(EPR_Ip1, Ip1);
     EEPROM.update(EPR_Ip2, Ip2);
@@ -532,7 +532,7 @@ void frame_60(){
       break;   
     case 1: // up
       lcd.clear();
-      updateOctetsInEEPROM(ip, EPR_Ip);
+      updateOctetsInEEPROM(EPR_Ip, ip);
       /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -543,7 +543,7 @@ void frame_60(){
       break;
     case 2:// down
       lcd.clear();
-      updateOctetsInEEPROM(ip, EPR_Ip);
+      updateOctetsInEEPROM(EPR_Ip, ip);
       /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -605,7 +605,7 @@ void frame_80(){
       break;   
     case 1:// up
       lcd.clear();
-      updateOctetsInEEPROM(ip, EPR_Ip);
+      updateOctetsInEEPROM(EPR_Ip, ip);
       /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -616,7 +616,7 @@ void frame_80(){
       break;
     case 2:// down
       lcd.clear();
-      updateOctetsInEEPROM(ip, EPR_Ip);
+      updateOctetsInEEPROM(EPR_Ip, ip);
       /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -649,7 +649,7 @@ void frame_90(){
       break;   
     case 1: // up
     lcd.clear();
-    updateOctetsInEEPROM(ip, EPR_Ip);
+    updateOctetsInEEPROM(EPR_Ip, ip);
     /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -660,7 +660,7 @@ void frame_90(){
       break;
     case 2:// down
     lcd.clear();
-    updateOctetsInEEPROM(ip, EPR_Ip);
+    updateOctetsInEEPROM(EPR_Ip, ip);
     /*
       EEPROM.update(EPR_Ip1, Ip1);
       EEPROM.update(EPR_Ip2, Ip2);
@@ -694,7 +694,7 @@ void frame_100(){
       break;   
     case 1:// up
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -704,7 +704,7 @@ void frame_100(){
       frame_N=90;
     break;
     case 2:// down
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
     /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -738,7 +738,7 @@ void frame_110(){
       break;   
     case 1:// up
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -749,7 +749,7 @@ void frame_110(){
       break;
     case 2:// down
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -782,7 +782,7 @@ void frame_120(){
       break;   
     case 1:// up
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -793,7 +793,7 @@ void frame_120(){
       break;
     case 2:// down
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -826,7 +826,7 @@ void frame_130(){
       break;   
     case 1:// up
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);
@@ -837,7 +837,7 @@ void frame_130(){
       break;
     case 2: // down
       lcd.clear();
-      updateOctetsInEEPROM(netmask, EPR_Mask);
+      updateOctetsInEEPROM(EPR_Mask, netmask);
       /*
       EEPROM.update(EPR_Mask1, Mask1);
       EEPROM.update(EPR_Mask2, Mask2);

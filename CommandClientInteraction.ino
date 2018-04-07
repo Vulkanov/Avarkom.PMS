@@ -4,195 +4,207 @@
  * ИНТЕРФЕЙСОМ ЧЕРЕЗ ETHERNET
  */
 
-const byte MAX_COMMAND_LENGTH = 21;
-char command[MAX_COMMAND_LENGTH];
+
+// максимальную длину имеют команды установки сетевых параметров (например, ip)
+// три стартовых байта, один байт команды, 4 байта октетов и возврат строки. 
+#define COMMAND_LENGTH 9
+
+byte startBytes[] = {0x06, 0x16, 0x06};
+
+byte command[COMMAND_LENGTH];
 byte commandIndex = 0;
 
+// байты команд
+enum COMMAND_CODE{CMD_SET_PRIM, // 0
+                  CMD_SET_SCND, // 1
+                  CMD_SET_AUTO, // 2
+                  CMD_STATE, // 3
+                  CMD_NETWORK_STATE, // 4
+                  CMD_COMMUTATION_STATE, // 5
+                  CMD_LOUD_THR, // 6
+                  CMD_QUIET_THR, // 7
+                  CMD_LOUD_TIM, // 8
+                  CMD_QUIET_TIM, // 9
+                  CMD_DHCP, // 10
+                  CMD_IP_ADDR, // 11
+                  CMD_PORT, // 12
+                  CMD_NETMASK, // 13
+                  CMD_GATEWAY, // 14
+                  CMD_RELAY}; // 15
+
 bool receiveCommand(EthernetClient client){
-  if (commandIndex >= MAX_COMMAND_LENGTH - 1){
-    return true;
-  }
- 
   while (client.connected()) {
     if (client.available()) {
-      char incomingByte = client.read();  
+      char incomingByte = client.read();
+      
+      if (__DEBUG__){
+        Serial.print("Received cmd byte: ");
+        Serial.println((unsigned byte)incomingByte, DEC);
+      }
+        
       command[commandIndex++] = incomingByte;      
       
-      if (incomingByte == '\r' || commandIndex >= MAX_COMMAND_LENGTH){
-        command[commandIndex] = '\0';
+      if (commandIndex >= COMMAND_LENGTH){
+        commandIndex = 0;
         return true;  
       }
-    }   
+    }
   }
   return false;
 }
 
 
-void executeCommand(EthernetClient client){
-  const int BODY_LENGTH = 4;
-  const int SETPOINT_LENGTH = MAX_COMMAND_LENGTH - BODY_LENGTH;
-  bool hasSetpoint = false;
-  char cmdBody[BODY_LENGTH + 1]; // еше 1 для терминального нуля
-  char setpoint[SETPOINT_LENGTH];
-  char reply[21];
-  // Команда состоит из тела (присутствует обязательно) и уставки (может отсутствовать).
-  // Тело от уставки отделяется знаком '='. В случае если уставки нет, знак равенства
-  // также отсутствует, а команда считается запросом. Примеры команд:
-  //
-  // PRIM
-  // LTHR=20
-  //
-  // Тело команды ВСЕГДА состоит ровно из BODY_LENGTH символов.
-  // На любоую команду формируется ответ, содержащий либо значение параметра,
-  // к которому относится данная команда, либо другую информациюю
-
-  memcpy(cmdBody, command, BODY_LENGTH);
-  memcpy(setpoint, command + BODY_LENGTH + 1, SETPOINT_LENGTH);
-  cmdBody[BODY_LENGTH] = '\0';
-  hasSetpoint = strchr(command, '=') != NULL;
-  
-  // Возможные тела команды:
-  char setToPrimary[] = "PRIM"; // использовать первичный источник независимо от уровня звука
-  char setToSecondary[] = "SCND"; // использовать вторичный источник независимо от уровня звука
-  char setToAutoMode[] = "AUTO"; // переключать источники автоматически
-  char getState[] = "STAT"; // вернуть состояние устройства 
-  char loudThreshold[] = "LTHR"; // установить/получить уровень, считающийся присутствием звука
-  char quietThreshold[] = "QTHR"; // установить/получить уровень, считающийся тишиной
-  char loudTimeout[] = "LTIM"; // установить/получить величину задержки перед переключением в режим "звук присутствует"
-  char quietTimeout[] = "QTIM"; // установить/получить величину задержки перед переключением в режим "тишина в канале"
-  char useDhcp[] = "DHCP"; // установить/получить значение флага получения устройством адреса по DHCP
-  char ipAddr[] = "ADDR"; // установить/получить IP устройства
-  char port[] = "PORT"; // установить/получить порт для соединения с интерфейсом (приложением)
-  char mask[] = "MASK"; // установить/получить маску подсети устройства
-  char gate[] = "GATE"; // установить/получить шлюз устройства
-  char relay[] = "RLAY"; // управление выходом реле
-
-  if (strcmp(cmdBody, setToPrimary) == 0){
-    sprintf(reply, "%s", "prim mode");
-    changeStateTo(PRIMARY_SOURCE);
-  }
-  else if (strcmp(cmdBody, setToSecondary) == 0){
-    sprintf(reply, "%s", "scnd mode");  
-    changeStateTo(SECONDARY_SOURCE);
-  }
-  else if (strcmp(cmdBody, setToAutoMode) == 0){
-    sprintf(reply, "%s", "auto mode");
-    changeStateTo(AUTO);
-  }
-  else if (strcmp(cmdBody, getState) == 0){
-    int primLeft = processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT);
-    int primRight = processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT);
-    int scndLeft = processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT);
-    int scndRight = processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT);
-
-    // ответ выглядит следующим образом:
-    //
-    // левыйПервый:правыйПервый:левыйВторой:правыйВторой:текущийИсточник:состояниеРеле
-    //
-    // где первые 4 числа - уровень сигнала на левом и правом канале первого и второго источника,
-    // далее идет текущий источник (один из PRIMARY_SOURCE, SECONDARY_SOURCE, AUTO)
-    // и состояние реле. Разделитель - двоеточие.
-    sprintf(reply, "%04d:%04d:%04d:%04d:%1d:%1d", 
-            primLeft, primRight, scndLeft, scndRight, CONTROL_TYPE, digitalRead(RELAY));
-  }
-  else if (strcmp(cmdBody, loudThreshold) == 0){
-    processDecimalParam(LOUD_TRESHOLD, EPR_loud_treshold, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, quietThreshold) == 0){
-    processDecimalParam(QUIET_TRESHOLD, EPR_quiet_treshold, reply, hasSetpoint, setpoint);  
-  }
-  else if (strcmp(cmdBody, loudTimeout) == 0){
-    processDecimalParam(LOUD_TIMEOUT, EPR_loud_timeout, reply, hasSetpoint, setpoint);  
-  }
-  else if (strcmp(cmdBody, quietTimeout) == 0){
-    processDecimalParam(QUIET_TIMEOUT, EPR_quiet_timeout, reply, hasSetpoint, setpoint);  
-  }
-  else if (strcmp(cmdBody, useDhcp) == 0){
-    processDecimalParam(USE_DHCP, EPR_USE_DHCP, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, ipAddr) == 0){
-    processOctetsString(ip, EPR_Ip, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, port) == 0){
-    processDecimalParam(PORT, EPR_PORT, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, mask) == 0){
-    processOctetsString(netmask, EPR_Mask, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, gate) == 0){
-    processOctetsString(gateway, EPR_Gate, reply, hasSetpoint, setpoint);
-  }
-  else if (strcmp(cmdBody, relay) == 0){
-    if (hasSetpoint){
-      digitalWrite(RELAY, atoi(setpoint));
+void executeCommand(EthernetClient client, char* reply){
+  // TODO: Возможно, использовать массив reply то как char, то как byte не очень хорошее решение
+  for (byte i=0; i < 3; i++) {
+    if (command[i] != startBytes[i]){
+      strcpy(reply, "bad cmd beginning");
+      return;
     }
-    sprintf(reply, "%d", digitalRead(RELAY));
-  }
-  else {
-    sprintf(reply, "%s", "unknown command");
   }
 
-  if(__DEBUG__){
-    Serial.print("Received command: ");
-    Serial.println(command);
-    Serial.print("Command body: ");
-    Serial.println(cmdBody);
-    if (hasSetpoint){
-      Serial.print("Received command has setpoint: ");
-      Serial.println(setpoint);
-    }
-    Serial.print("Device reply: ");
-    Serial.println(reply);
+  if (command[COMMAND_LENGTH - 1] != '\r'){
+    strcpy(reply, "bad cmd end");
+    return;
   }
 
-  client.println(reply);
+  // на случай если эта команда - установка адреса, маски или шлюза
+  byte octets[4];
+  for (byte i = 0; i < 4; i++){
+    octets[i] = command[i + 4];
+  }
+
+  switch ((COMMAND_CODE)command[3]){
+    case CMD_SET_PRIM:
+      changeStateTo(PRIMARY_SOURCE);
+      break;
+    case CMD_SET_SCND:
+      changeStateTo(SECONDARY_SOURCE);
+      break;
+    case CMD_SET_AUTO:
+      changeStateTo(AUTO);
+      break;
+    case CMD_STATE: {
+      // ответ выглядит следующим образом:
+      //
+      //       левыйПервый:правыйПервый:левыйВторой:правыйВторой:текущийРежим:текущийИсточник:состояниеРеле
+      // байты:    2      +    2       +    2      +    2       +      1        +     1      +      1       = 11 байт
+      //
+      // где первые 8 байт - уровень сигнала на левом и правом канале первого и второго источника,
+      // далее идет текущий режим (один из PRIMARY_SOURCE, SECONDARY_SOURCE, AUTO),
+      // текущий источник) и состояние реле.
+      // sizeof(int) == 2
+      // sizeof(long) == 4
+
+      byte currentByte = 0;
+            
+      writeIntToReply(reply, currentByte, processAnalogValue(PRIMARY_SOURCE_LEFT_INPUT)); 
+      writeIntToReply(reply, currentByte, processAnalogValue(PRIMARY_SOURCE_RIGHT_INPUT)); 
+      writeIntToReply(reply, currentByte, processAnalogValue(SECONDARY_SOURCE_LEFT_INPUT)); 
+      writeIntToReply(reply, currentByte, processAnalogValue(SECONDARY_SOURCE_RIGHT_INPUT)); 
+
+      reply[currentByte++] = (char)CONTROL_TYPE;
+      reply[currentByte++] = (char)CURRENT_SOURCE;
+      reply[currentByte++] = (char)digitalRead(RELAY);
+      
+      return;
+      }
+    case CMD_NETWORK_STATE:{
+      // ip, порт, маска, шлюз, DHCP - как последовательность байт
+      // 4 + 1 + 4 + 4 + 1 = 14 байт
+      byte currentByte = 0;
+      for (byte i = 0; i < 4; i++, currentByte++){
+        reply[currentByte] = ip[i];
+      }
+      reply[currentByte] = PORT;
+      currentByte++;
+      for (byte i = 0; i < 4; i++, currentByte++){
+        reply[currentByte] = netmask[i];
+      }
+      for (byte i = 0; i < 4; i++, currentByte++){
+        reply[currentByte] = gateway[i];
+      }
+      reply[currentByte] = USE_DHCP;
+      currentByte++;
+      return;
+      }
+    case CMD_COMMUTATION_STATE:
+      reply[0] = LOUD_TRESHOLD;
+      reply[1] = QUIET_TRESHOLD;
+      reply[2] = LOUD_TIMEOUT;
+      reply[3] = QUIET_TIMEOUT;
+      return;
+    case CMD_LOUD_THR:
+      LOUD_TRESHOLD = command[4];
+      EEPROM.update(EPR_loud_treshold, command[4]);
+      break;
+    case CMD_QUIET_THR:
+      QUIET_TRESHOLD = command[4];
+      EEPROM.update(EPR_quiet_treshold, command[4]);
+      break;
+    case CMD_LOUD_TIM:
+      LOUD_TIMEOUT = command[4];
+      EEPROM.update(EPR_loud_timeout, command[4]);
+      break;
+    case CMD_QUIET_TIM:
+      QUIET_TIMEOUT = command[4];
+      EEPROM.update(EPR_quiet_timeout, command[4]);
+      break;
+    case CMD_DHCP:
+      EEPROM.update(EPR_USE_DHCP, command[4]);
+      break;
+    case CMD_IP_ADDR:
+      updateOctetsInEEPROM(EPR_Ip, octets);
+      getOctetsFromEEPROM(ip, EPR_Ip);
+      break;
+    case CMD_PORT:
+      PORT = command[4];
+      EEPROM.update(EPR_PORT, command[4]);
+      break;
+    case CMD_NETMASK:
+      updateOctetsInEEPROM(EPR_Mask, octets);
+      getOctetsFromEEPROM(netmask, EPR_Mask);
+      break;
+    case CMD_GATEWAY:
+      updateOctetsInEEPROM(EPR_Gate, octets);
+      getOctetsFromEEPROM(gateway, EPR_Gate);
+      break;
+    case CMD_RELAY:
+      digitalWrite(RELAY, command[4]&1); // побитовое И, чтобы гарантировать, что запишем 0 или 1
+      break;
+  }
+  sprintf(reply, "%s", "Got it dude");  
+}
+
+void sendReply(EthernetClient client, char* reply, byte replaySize){
+  byte sent = client.write(reply, replaySize);
   delay(1);
+  
+  if(__DEBUG__){
+    Serial.print("||||||||||Command code (dec): ");
+    Serial.println(command[3], DEC);
+    Serial.println("Comand arg bytes (dec):");
+    for (byte i = 4; i < COMMAND_LENGTH; i++){
+      Serial.println((unsigned byte)command[i], DEC);
+    }
 
-  commandIndex = 0;
-  command[0] = '\0';
+    if (sent == replaySize){
+      Serial.println("Sent complete reply");
+      for (byte i = 0; i < replaySize - 1; i++){
+      Serial.println((unsigned byte)reply[i], DEC);
+    }
+    }
+    Serial.println("----------------");
+  }
 }
 
-void processDecimalParam(byte& value, byte eeprom_addr, char* reply, bool hasSetpoint, char* setpoint){
-  if (hasSetpoint){
-    value = atoi(setpoint);
-    EEPROM.update(eeprom_addr, value);
+void writeIntToReply(char* reply, byte& currentByte, int val){
+  if(__DEBUG__){
+    Serial.print("Channel value (dec): ");
+    Serial.println((unsigned byte)val, DEC);
   }
-  sprintf(reply, "%d", value);
-}
-
-void processOctetsString(byte* octets, byte eeprom_addr, char* reply, bool hasSetpoint, char* setpoint){
-  if (hasSetpoint){
-    byte newOctets[4];
-    char *charOctet;
-    byte controlCounter = 0;
-
-    charOctet = strtok(setpoint, ".");
-    while (charOctet != NULL){
-      newOctets[controlCounter] = atoi(charOctet);
-      controlCounter++;
-      if (controlCounter > 3){
-        break;
-      }
-      charOctet = strtok(NULL, ".");
-    }
-
-    if (__DEBUG__){
-      Serial.println("Received octets: ");
-      Serial.println(newOctets[0]);
-      Serial.println(newOctets[1]);
-      Serial.println(newOctets[2]);
-      Serial.println(newOctets[3]);
-      Serial.print("Control counter value: ");
-      Serial.println(controlCounter);
-    }
-
-    if (controlCounter == 4){ // если пришли все октеты
-      for (int i = 0; i < 4; i++){
-        octets[i] = newOctets[i];
-      }
-      updateOctetsInEEPROM(octets, eeprom_addr);
-    }
-  }
-  sprintf(reply, "%d.%d.%d.%d", octets[0], octets[1], octets[2], octets[3]);
+  char* ptr = (char*) &val;
+  reply[currentByte++] = *(ptr++);
+  reply[currentByte++] = *(ptr++);
 }
 
