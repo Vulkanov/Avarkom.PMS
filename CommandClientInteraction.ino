@@ -40,6 +40,7 @@ bool receiveCommand(EthernetClient client){
       if (__DEBUG__){
         Serial.print("Received cmd byte: ");
         Serial.println((unsigned byte)incomingByte, DEC);
+        Serial.println("=========");
       }
         
       command[commandIndex++] = incomingByte;      
@@ -56,15 +57,18 @@ bool receiveCommand(EthernetClient client){
 
 void executeCommand(EthernetClient client, char* reply){
   // TODO: Возможно, использовать массив reply то как char, то как byte не очень хорошее решение
-  for (byte i=0; i < 3; i++) {
+  bool badCmdBeginning = false;
+  for (byte i = 0; i < 3; i++) {
     if (command[i] != startBytes[i]){
-      strcpy(reply, "bad cmd beginning");
-      return;
+      badCmdBeginning = true;
+      break;
     }
   }
 
-  if (command[COMMAND_LENGTH - 1] != '\r'){
-    strcpy(reply, "bad cmd end");
+  if (badCmdBeginning || command[COMMAND_LENGTH - 1] != '\r' ){
+    strcpy(reply, "bad cmd");
+    badCmdReceived = true;
+    badCmdReceiveTime = millis();
     return;
   }
 
@@ -181,6 +185,8 @@ void sendReply(EthernetClient client, char* reply, byte replaySize){
   delay(1);
   
   if(__DEBUG__){
+    Serial.print("********cmd is bad: ");
+    Serial.println(badCmdReceived);
     Serial.print("||||||||||Command code (dec): ");
     Serial.println(command[3], DEC);
     Serial.println("Comand arg bytes (dec):");
@@ -199,10 +205,6 @@ void sendReply(EthernetClient client, char* reply, byte replaySize){
 }
 
 void writeIntToReply(char* reply, byte& currentByte, int val){
-  if(__DEBUG__){
-    Serial.print("Channel value (dec): ");
-    Serial.println((unsigned byte)val, DEC);
-  }
   char* ptr = (char*) &val;
   reply[currentByte++] = *(ptr++);
   reply[currentByte++] = *(ptr++);

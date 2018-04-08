@@ -33,6 +33,11 @@ byte CONTROL_TYPE;
 // логика переключения источников
 long timeMark;
 
+// TODO: УБРАТЬ ОТСЮДА В CommandClientInteraction!
+#define BAD_CMD_TIMEOUT 2000 // в миллисекундах!
+bool badCmdReceived = false;
+long badCmdReceiveTime = 0;
+
 byte QUIET_TIMEOUT;
 byte LOUD_TIMEOUT;
 byte QUIET_TRESHOLD;
@@ -196,15 +201,20 @@ void loop() {
   }
   
   keys(); // ввод
-  
-  EthernetClient commandClient = commandServer->available();
-  const byte REPLY_SIZE = 14;
-  char reply[REPLY_SIZE];
-  if (receiveCommand(commandClient)){
-    executeCommand(commandClient, reply);
-    sendReply(commandClient, reply, REPLY_SIZE);
+
+  // обрабатываем следующую команду, если предыдущая была правильной или если предыдущая была неправильной, но таймаут истек
+  bool processNextComand = !badCmdReceived || millis() - badCmdReceiveTime >= BAD_CMD_TIMEOUT;
+
+  if (processNextComand){
+    badCmdReceived = false;
+    EthernetClient commandClient = commandServer->available();
+    const byte REPLY_SIZE = 14;
+    char reply[REPLY_SIZE];
+    if (receiveCommand(commandClient)){
+      executeCommand(commandClient, reply);
+      sendReply(commandClient, reply, REPLY_SIZE);
+    }
   }
-  
   processWebClient();
   
   if (CONTROL_TYPE != AUTO){
