@@ -2,8 +2,8 @@
 
 // использовать одну из следующих библиотек 
 //в зависимости от версии сетевого шилда
-#include <Ethernet.h>
-//#include <Ethernet2.h> 
+//#include <Ethernet.h>
+#include <Ethernet2.h> 
 
 #include <stdio.h>
 #include <EEPROM.h>
@@ -78,7 +78,7 @@ LiquidCrystal_I2C lcd(0x3F,16,2);  // Устанавливаем дисплей
 //==========================================================FUNCTIONS==========================================================
 // переключение состояний
 void changeStateTo(int state){
-  if (CONTROL_TYPE != AUTO && state == AUTO){ // если переходим в автоматический режим из ручного
+  if (state == AUTO){ // если переходим в автоматический режим из ручного
     CONTROL_TYPE = AUTO;
     SOURCE_STATE = INITIAL_STATE;
     return;
@@ -193,7 +193,7 @@ void setup() {
  
 void loop() {
   // сигнализируем, ОБ АВАРИИ (если в автоматическом режиме и источник 2)
-  if (CONTROL_TYPE == AUTO){
+  if (CONTROL_TYPE == AUTO && SOURCE_STATE == SILENCE){
     digitalWrite(AUTO_STATE_INDICATOR, HIGH);
   }
   else{
@@ -233,7 +233,7 @@ void loop() {
         changeSourceTo(PRIMARY_SOURCE);
         SOURCE_STATE = SOUND;
       }
-      else{
+      else if (soundIsAbsent){
         changeSourceTo(SECONDARY_SOURCE);
         SOURCE_STATE = SILENCE;
       }
